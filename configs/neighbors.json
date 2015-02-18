@@ -1,0 +1,27 @@
+
+[
+    {
+        "local_interface": "mgmt0", 
+        "neighbor": "c3550", 
+        "neighbor_interface": "FastEthernet0/22", 
+        "platform": "Cisco WS-C3550-24"
+    }, 
+    {
+        "local_interface": "Ethernet1/1", 
+        "neighbor": "N9K2", 
+        "neighbor_interface": "Ethernet1/1", 
+        "platform": "N9K-C9396PX"
+    }, 
+    {
+        "local_interface": "Ethernet1/2", 
+        "neighbor": "N9K2", 
+        "neighbor_interface": "Ethernet1/2", 
+        "platform": "N9K-C9396PX"
+    }, 
+    {
+        "local_interface": "Ethernet2/12", 
+        "neighbor": "N9K2", 
+        "neighbor_interface": "Ethernet2/12", 
+        "platform": "N9K-C9396PX"
+    }
+]

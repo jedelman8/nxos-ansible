@@ -1,0 +1,15 @@
+---
+
+- name: facts testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # retrieve facts
+    - nxos_get_facts: host={{ inventory_hostname }}
+
+    # retrieve facts with detailed info for interfaces (from 'show interface status')
+    - nxos_get_facts: host={{ inventory_hostname }} detail=true

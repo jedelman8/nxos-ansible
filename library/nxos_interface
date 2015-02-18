@@ -1,0 +1,366 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+
+module: nxos_interface
+short_description: Manages physical attributes of interfaces
+description:
+    - Manages physical attributes on interface of NX-API enabled devices
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco v0.1.3
+notes:
+    - When using one of the five special keywords for the interface
+      param, the module is not non-idempotent.  Keywords include all,
+      ethernet, loopback, svi, and portchannel.
+    - This module is also used to create logical interfaces such as
+      svis and loopbacks.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    interface:
+        description:
+            - Full name of interface, i.e. Ethernet1/1, port-channel10.
+              Also supports non-idempotent keywords including all, ethernet,
+              loopback, svi, portchannel
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    admin_state:
+        description:
+            - Administrative state of the interface
+        required: false
+        default: up
+        choices: ['up','down']
+        aliases: []
+    duplex:
+        description:
+            - Manage duplex settings on an interface
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    description:
+        description:
+            - Interface description
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    mode:
+        description:
+            - Manage Layer 2 or Layer 3 state of the interface
+        required: false
+        default: null
+        choices: ['layer2','layer3']
+        aliases: []
+    speed:
+        description:
+            - Manage speed settings on an interface
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Specify desired state of the resource
+        required: true
+        default: present
+        choices: ['present','absent','default']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http']
+        aliases: []
+'''
+
+EXAMPLES = '''
+# Ensure an interface is a Layer 3 port and that it has the proper description
+- nxos_interface: interface=Ethernet1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
+
+# Admin down an interface
+- nxos_interface: interface=Ethernet2/1 host={{ inventory_hostname }} admin_state=down
+
+# Remove all loopback interfaces
+- nxos_interface: interface=loopback state=absent host={{ inventory_hostname }}
+
+# Remove all logical interfaces
+- nxos_interface: interface={{ item }} state=absent host={{ inventory_hostname }}
+  with_items:
+    - loopback
+    - portchannel
+    - svi
+
+# Admin up all ethernet interfaces
+- nxos_interface: interface=ethernet host={{ inventory_hostname }} admin_state=up
+
+# Admin down ALL interfaces (physical and logical)
+- nxos_interface: interface=all host={{ inventory_hostname }} admin_state=down
+
+'''
+
+try:
+    import socket
+    from pycisco.nxos.device import Device
+    from pycisco.nxos.device import Auth
+    from pycisco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            interface=dict(required=True),
+            admin_state=dict(default='up', choices=['up', 'down']),
+            duplex=dict(default=None),
+            state=dict(default='present',
+                       choices=['present', 'absent', 'default']),
+            speed=dict(default=None),
+            description=dict(default=None),
+            mode=dict(choices=['layer2', 'layer3']),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    host = socket.gethostbyname(module.params['host'])
+
+    interface = module.params['interface'].lower()
+    duplex = module.params['duplex']
+    admin_state = module.params['admin_state']
+    speed = module.params['speed']
+    description = module.params['description']
+    mode = module.params['mode']
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password)
+
+    changed = False
+
+    args = dict(interface=interface, admin_state=admin_state,
+                description=description, duplex=duplex, speed=speed, mode=mode)
+
+    i_list = []
+
+    # These are the 5 special keywords that can be used for the interface param
+    # in addition to using the full name of an interface, i.e. Ethernet1/1
+    # FYI: when these 5 keywords are used, the module is not idempotent
+    # b/c when they are used, the user wants speed and knows what they need :)
+    # When these keywords are used, duplex and speed are not supported
+    intf_type = nxapi_lib.get_interface_type(interface)
+    commands = []
+    cmds = ''
+    if interface in ['all', 'ethernet']:
+        device.set_timeout = 120
+
+    if interface in ['svi', 'loopback', 'all', 'ethernet', 'portchannel']:
+        # THIS BLOCK IS NOT IDEMPOTENT
+        interface_dict = nxapi_lib.get_interfaces_dict(device)
+        args.pop('speed')
+        args.pop('duplex')
+        if interface != 'all':
+            # retrieves a list of interfaces give an interface type
+            i_list = interface_dict[interface]
+        else:
+            for interface_type, interface_list in interface_dict.iteritems():
+                if interface_list:
+                    for each in interface_list:
+                        if each != 'mgmt0' and each.lower() != 'vlan1':
+                            # complete list of all interfaces on the switch
+                            # minus the management0 interface and vlan1
+                            i_list.append(each)
+
+        args.pop('interface')
+        existing = {}
+        proposed = {}
+        command = ''
+        for param, value in args.iteritems():
+            if value:
+                proposed[param] = value
+        for each in i_list:
+            each_type = nxapi_lib.get_interface_type(each)
+            if each_type == 'unknown':
+                module.fail_json(interface=each, error='invalid intf name')
+            else:
+                if state == 'default':
+                    command = 'default interface ' + each
+                elif state == 'absent':
+                    if each_type == 'ethernet':
+                        command = 'default interface ' + each
+                    elif each_type in ['svi', 'loopback', 'portchannel']:
+                        if each.lower() != 'vlan1':
+                            command = 'no interface ' + each
+                elif state == 'present':
+                    for k, v in proposed.iteritems():
+                        if k == 'description':
+                            command = 'description ' + description
+                        elif k == 'admin_state':
+                            if v == 'up':
+                                command = 'no shutdown'
+                            elif v == 'down':
+                                command = 'shutdown'
+                        elif k == 'mode':
+                            if each_type in ['ethernet', 'portchannel']:
+                                if v == 'layer2':
+                                    command = 'switchport'
+                                elif v == 'layer3':
+                                    command = 'no switchport'
+                        if command:
+                            commands.append(['interface ' + each])
+                            commands.append([command])
+                        command = None
+                if command:
+                    commands.append([command])
+                command = None
+
+    # IDEMPOTENT SECTION BEGINS HERE
+    else:
+        if interface == 'vlan1' and state == 'absent':
+            module.fail_json(msg='CANNOT REMOVE VLAN1.  Doh!')
+        elif interface == 'mgmt0' or interface == 'management0':
+            if state == 'absent' or state == 'default':
+                module.fail_json(msg='CANNOT DEFAULT MGMT0- USED BY NXAPI')
+        if intf_type == 'svi' and \
+                not nxapi_lib.feature_enabled(device, 'interface-vlan'):
+            module.fail_json(
+                msg='SVI (interface-vlan) feature needs to be enabled first',
+            )
+
+        # for e_interface in i_list:
+        # e_interface = e_interface.lower()
+        e_interface = interface.lower()
+
+        if intf_type == 'unknown':
+            module.fail_json(
+                msg='unknown interface type found-1',
+                interface=e_interface,
+                type=intf_type
+                )
+
+        # gets proper params that are allowed to be configured based on
+        # interface type
+        keys = nxapi_lib.get_intf_args(e_interface).keys()
+
+        proposed = {}
+
+        # retrieves proper interface params from args (user defined params)
+        for k in keys:
+            temp = args.get(k, None)
+            if temp:
+                proposed[k] = temp
+
+        existing = nxapi_lib.get_interface(device, e_interface)
+
+        # Additional params being returned we don't need right now,
+        # so we are removing them
+        # if they aren't defined in the get_intf_args() method
+        for param in existing.keys():
+            if param not in keys:
+                existing.pop(param)
+
+        delta = set()
+        commands = []
+        status = nxapi_lib.is_default(device, e_interface)
+        if state == 'absent':
+            if intf_type in ['svi', 'loopback', 'portchannel'] \
+                    and status != 'DNE':
+                if not e_interface == 'vlan1':
+                    cmds = nxapi_lib.remove_interface(device, e_interface)
+                    commands.append(cmds)
+            elif intf_type in ['ethernet']:
+                if status is False:
+                    cmds = nxapi_lib.default_interface(device, e_interface)
+                    commands.append(cmds)
+            else:
+                module.fail_json(msg='interface you are trying to remove does '
+                                 + 'not exist')
+        elif state == 'present':
+            delta = set(proposed.iteritems()).difference(existing.iteritems())
+            if not existing:
+                cmds = nxapi_lib.get_interface_config_commands(
+                    device,
+                    delta,
+                    e_interface)
+                commands.append(cmds)
+            else:
+                if delta:
+                    cmds = nxapi_lib.get_interface_config_commands(
+                        device,
+                        delta,
+                        e_interface)
+                    commands.append(cmds)
+        elif state == 'default':
+            if status is False:
+                if intf_type != 'managment':
+                    cmds = nxapi_lib.default_interface(device, e_interface)
+                    commands.append(cmds)
+            elif status == 'DNE':
+                module.fail_json(msg='interface you are trying to default does'
+                                 + ' not exist')
+
+    if commands:
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+
+    if cmds:
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            device.config(cmds)
+            changed = True
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    if interface not in ['svi', 'loopback', 'all', 'ethernet', 'portchannel']:
+        results['new'] = nxapi_lib.get_interface(device, e_interface)
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

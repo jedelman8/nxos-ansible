@@ -1,0 +1,17 @@
+---
+
+- name: vpc testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # ensure vpc domain 100 is configured
+    - nxos_vpc: domain=100 role_priority=1000 system_priority=2000 pkl_src=192.168.100.1 pkl_dest=192.168.100.2 host={{ inventory_hostname }}
+
+    # ensure peer gateway is enabled for vpc domain 100
+    - nxos_vpc: domain=100 peer_gw=true host={{ inventory_hostname }}
+
+    # ensure vpc domain does not exist on switch
+    - nxos_vpc: domain=100 host={{ inventory_hostname }} state=absent

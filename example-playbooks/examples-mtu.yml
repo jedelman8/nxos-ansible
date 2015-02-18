@@ -1,0 +1,21 @@
+---
+
+- name: mtu testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # Ensure system mtu is 9126
+    - nxos_mtu: sysmtu=9216 host={{ inventory_hostname }}
+
+    # Config mtu on Eth1/1 (routed interface)
+    - nxos_mtu: interface=Ethernet1/1 mtu=1600 host={{ inventory_hostname }}
+
+    # Config mtu on Eth1/3 (switched interface)
+    - nxos_mtu: interface=Ethernet1/3 mtu=9216 host={{ inventory_hostname }}
+
+    # Unconfigure mtu on a given interface
+    - nxos_mtu: interface=Ethernet1/3 mtu=9216 host={{ inventory_hostname }} state=absent

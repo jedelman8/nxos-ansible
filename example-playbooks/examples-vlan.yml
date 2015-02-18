@@ -1,0 +1,31 @@
+---
+
+- name: vlan testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # Ensure VLAN 50 exists with the name WEB and is in the shutdown state
+     - nxos_vlan: vlan_id=50 host={{ inventory_hostname }} admin_state=down name=WEB
+
+    # Ensure VLAN is NOT on the device
+    - nxos_vlan: vlan_id=50 host={{ inventory_hostname }} state=absent
+
+    # Ensure a range of VLANs are present on the switch
+    - nxos_vlan: vlan_id="2-10,20,50,55-60" host={{ inventory_hostname }} state=present
+
+    # Ensure a group of VLANs are present with the given names
+    - nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present
+      with_items:
+        - vlan_id: 10
+          name: web
+        - vlan_id: 20
+          name: app
+        - { vlan_id: 30, name: db }
+        - vlan_id: 40
+          name: misc
+        - vlan_id: 99
+          name: native_vlan

@@ -1,0 +1,22 @@
+---
+
+- name: switchport testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+    # Config a switchport to be a trunk interface with native vlan 10 and carriers vlan 2-100
+    - nxos_switchport: interface=Ethernet1/1 mode=trunk native_vlan=10 trunk_vlans=2-100 host={{ inventory_hostname }}
+
+    # Config a switchport to an access port on vlan 20
+    - nxos_switchport: interface=Ethernet1/2 mode=access access_vlan=20 host={{ inventory_hostname }}
+
+    # Remove existing access port vlan configuration on a switchport (mode is required)
+    - nxos_switchport: interface=Ethernet1/2 host={{ inventory_hostname }} mode=access state=absent
+
+    # Remove existing trunk port vlan configuration on a switchport (mode is required)
+    - nxos_switchport: interface=Ethernet1/1 host={{ inventory_hostname }} mode=trunk state=absent
+
+    # Note: using absent will result in a default switchport config (access vlan 1).  mode is required.

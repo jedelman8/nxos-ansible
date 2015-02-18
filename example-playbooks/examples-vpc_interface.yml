@@ -1,0 +1,17 @@
+---
+
+- name: vpc interface testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # config portchannel10 to be the peerlink
+    #- nxos_vpc_interface: portchannel=10 peer_link=true host={{ inventory_hostname }}
+
+    # config portchannel20 to be vpc20
+    #- nxos_vpc_interface: portchannel=20 vpc=20 host={{ inventory_hostname }}
+
+    # remove whatever VPC config is on portchannel if any exists (vpc xx or vpc peer-link)
+    - nxos_vpc_interface: portchannel=80 host={{ inventory_hostname }} state=absent

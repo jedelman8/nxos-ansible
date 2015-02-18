@@ -1,0 +1,18 @@
+---
+
+- name: hsrp testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # ensure hsrp is configured with following params on a SVI
+    - nxos_hsrp: group=10 vip=10.1.1.1 priority=150 interface=vlan10 preempt=enabled host={{ inventory_hostname }}
+
+    # ensure hsrp is configured with following params on a SVI
+    - nxos_hsrp: group=10 vip=10.1.1.1 priority=150 interface=vlan10 preempt=enabled host={{ inventory_hostname }} auth_type=text auth_string=CISCO
+
+    # removing hsrp config for given interface, group, and vip
+    - nxos_hsrp: group=10 interface=vlan10 vip=10.1.1.1 host={{ inventory_hostname }} state=absent

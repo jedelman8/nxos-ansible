@@ -1,0 +1,16 @@
+---
+
+- name: get neighbor data
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    - name: get neighbors
+      nxos_get_neighbors: type=cdp host={{ inventory_hostname }}
+      register: my_neighbors
+
+    - name: print data to file
+      template: src=templates/neighbors.j2 dest=configs/neighbors.json

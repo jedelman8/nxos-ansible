@@ -1,0 +1,15 @@
+---
+
+- name: vrf testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # ensure yankees VRF exists on switch
+    # description is not idempotent
+    - nxos_vrf: vrf=yankees host={{ inventory_hostname }}
+
+    # ensure yankees VRF does not exist on switch
+    - nxos_vrf: vrf=yankees host={{ inventory_hostname }} state=absent

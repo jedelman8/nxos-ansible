@@ -1,0 +1,21 @@
+---
+
+- name: test portchannel
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+    # Ensure port-channel 99 doesn't exist on the switch
+    - nxos_portchannel: group=99 host={{ inventory_hostname }} state=absent
+
+    # Ensure port-channel99 is created, add two members, and set to mode on
+    - nxos_portchannel:
+        group: 99
+        members: ['Ethernet1/1','Ethernet1/2']
+        mode: 'active'
+        host: "{{ inventory_hostname }}"
+        state: present
+
+

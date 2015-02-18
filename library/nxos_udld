@@ -1,0 +1,191 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+
+module: nxos_udld
+short_description: Manages UDLD global configuration params
+description:
+    - Manages UDLD global configuration params
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco v0.1.3
+notes:
+    - When state=absent, it unconfigures existing setings if
+      they already exist on the switch.  It is cleaner to use
+      state=present.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    aggressive:
+        description:
+            - Toggles aggressive mode
+        required: false
+        default: null
+        choices: ['enabled','disabled']
+        aliases: []
+    msg_time:
+        description:
+            - Message time in seconds for UDLD packets
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    reset:
+        description:
+            - Ability to reset UDLD down interfaces
+        required: false
+        default: null
+        choices: ['true','false']
+        aliases: []
+    state:
+        description:
+            - Manage the state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http']
+        aliases: []
+'''
+EXAMPLES = '''
+# ensure udld aggressive mode is globally disabled and se global message interval is 20
+- nxos_udld: aggressive=disabled msg_time=20 host={{ inventory_hostname }}
+
+# Ensure agg mode is globally enabled and msg time is 15
+- nxos_udld: aggressive=enabled msg_time=15 host={{ inventory_hostname }} state=present
+
+# Ensure msg_time is unconfigured (if it is already 25- basically defaults back to 15 anyway)
+
+'''
+try:
+    import socket
+    from pycisco.nxos.device import Device
+    from pycisco.nxos.device import Auth
+    from pycisco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            aggressive=dict(choices=['enabled', 'disabled']),
+            msg_time=dict(type='str'),
+            reset=dict(choices=BOOLEANS, type='bool'),
+            state=dict(choices=['absent', 'present'], default='present'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    host = socket.gethostbyname(module.params['host'])
+
+    aggressive = module.params['aggressive']
+    msg_time = module.params['msg_time']
+    reset = module.params['reset']
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password)
+
+    args = dict(aggressive=aggressive, msg_time=msg_time, reset=reset)
+    '''
+    in UDLD INTERFACE, make sure it's an ETH interface, ohterwise faiL
+    nxapi_udld_interface: mode=enabled/disabled/agressive
+    '''
+    proposed = {}
+    if not nxapi_lib.feature_enabled(device, 'udld'):
+        module.fail_json(msg='UDLD feature needs to be enabled first')
+
+    if aggressive and state == 'absent':
+        module.fail_json(msg="It's better to use state=present when "
+                         + "configuring or unconfiguring agg mode. "
+                         + "state=absent is just for when using "
+                         + "msg_time param.")
+    for param, value in args.iteritems():
+        if value:
+            proposed[param] = value
+
+    existing = nxapi_lib.get_udld_global(device)
+
+    delta = set(proposed.iteritems()).difference(existing.iteritems())
+
+    changed = False
+    commands = []
+
+    if state == 'present':
+
+        delta = set(proposed.iteritems()).difference(existing.iteritems())
+        if delta:
+            command = nxapi_lib.get_commands_config_udld_global(dict(delta))
+            commands.append(command)
+    elif state == 'absent':
+        common = set(proposed.iteritems()).intersection(existing.iteritems())
+        if common:
+            command = nxapi_lib.get_commands_remove_udld_global(dict(common))
+            commands.append(command)
+    cmds = ''
+    if commands:
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+
+    if cmds:
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            device.config(cmds)
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['new'] = nxapi_lib.get_udld_global(device)
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+
+module: nxos_dir
+short_description: Manage dirs and files in the NX-OS filesystem
+description:
+    - Offers ability to create and delete directories and files
+      on a Nexus switch
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco v0.1.3
+notes:
+    - state=present should not be used when path is a file
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    path:
+        description:
+            - Path (with filename if deleting file)
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Desired state of the resource / path
+        required: true
+        default: null
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http']
+        aliases: []
+'''
+
+EXAMPLES = '''
+# Ensure directory is created on target device
+- nxos_dir: path='bootflash:new_config_dir' host={{ inventory_hostname }} state=present
+
+# Ensure directory is not on target device
+- nxos_dir: path='bootflash:new_config_dir' host={{ inventory_hostname }} state=absent
+
+# Ensure file is not on target device
+- nxos_dir: path='bootflash:switch_config1.cfg' host={{ inventory_hostname }} state=absent
+
+'''
+
+try:
+    import socket
+    from pycisco.nxos.device import Device
+    from pycisco.nxos.device import Auth
+    from pycisco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            path=dict(required=True),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+            state=dict(options=['present', 'absent'], required=True)
+        ),
+        supports_check_mode=False
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    host = socket.gethostbyname(module.params['host'])
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password)
+
+    path = module.params['path']
+    valid_list = ['bootflash', 'debug', 'log', 'logflash', 'usb1', 'usb2',
+                  'volatile']
+    if ':' in path:
+        root = path.split(':')[0]
+        if root not in valid_list:
+            module.fail_json(msg='invalid root directory', options=valid_list,
+                             input=path)
+    else:
+        module.fail_json(msg='invalid format for path.  Requires ":"'
+                         + 'Example- bootflash:scripts/python/')
+
+    if state == 'present':
+        change_dir = nxapi_lib.create_dir(device, path)
+    elif state == 'absent':
+        change_dir = nxapi_lib.delete_dir(device, path)
+
+    results = {}
+    results['path'] = path
+    results['changed'] = change_dir
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

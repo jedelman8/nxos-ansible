@@ -1,0 +1,15 @@
+---
+
+- name: get neighbors testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # retrieve cdp neighbors
+    - nxos_get_neighbors: type=cdp host={{ inventory_hostname }}
+
+    # retrieve lldp neighbors
+    - nxos_get_neighbors: type=lldp host={{ inventory_hostname }}

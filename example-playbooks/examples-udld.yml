@@ -1,0 +1,17 @@
+---
+
+- name: udld testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # ensure udld aggressive mode is globally disabled and se global message interval is 20
+    - nxos_udld: aggressive=disabled msg_time=20 host={{ inventory_hostname }}
+
+    # Ensure agg mode is globally enabled and msg time is 15
+    - nxos_udld: aggressive=enabled msg_time=15 host={{ inventory_hostname }} state=present
+
+    # Ensure msg_time is unconfigured (if it is already 25- basically defaults back to 15 anyway)
+    - nxos_udld: msg_time=25 host={{ inventory_hostname }} state=absent

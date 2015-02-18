@@ -1,0 +1,225 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+
+module: nxos_portchannel
+short_description: Manages port-channel interfaces
+description:
+    - Manages port-channel specific configuration parameters
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco v0.1.3
+notes:
+    - Absent removes the portchannel config and interface if it
+      already exists
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    group:
+        description:
+            - channel-group number for the port-channel
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    mode:
+        description:
+            - Mode for the port-channel, i.e. on, active, passive
+        required: false
+        default: on
+        choices: ['active','passive','on']
+        aliases: []
+    min_links:
+        description:
+            - min links required to keep portchannel up
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    members:
+        description:
+            - List of interfaces that will be managed in a given portchannel
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Manage the state of the resource
+        required: true
+        default: null
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http']
+        aliases: []
+'''
+EXAMPLES = '''
+# Ensure port-channel 99 doesn't exist on the switch
+- nxos_portchannel: group=99 host={{ inventory_hostname }} state=absent
+
+# Ensure port-channel99 is created, add two members, and set to mode on
+- nxos_portchannel:
+    group: 99
+    members: ['Ethernet1/1','Ethernet1/2']
+    mode: 'active'
+    host: "{{ inventory_hostname }}"
+    state: present
+
+'''
+
+try:
+    import socket
+    from pycisco.nxos.device import Device
+    from pycisco.nxos.device import Auth
+    from pycisco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            group=dict(required=True, type='str'),
+            mode=dict(choices=['on', 'active', 'passive'],
+                      default='on',
+                      type='str'),
+            min_links=dict(default=None, type='str'),
+            members=dict(default=None),
+            state=dict(choices=['absent', 'present'],
+                       default='present'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    # ************************************************************************
+    # members must be a list & this requires using YAML syntax in the playbook
+    # ************************************************************************
+
+    results = {}
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    host = socket.gethostbyname(module.params['host'])
+
+    group = module.params['group']
+    mode = module.params['mode']
+    min_links = module.params['min_links']
+    members = module.params['members']
+
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password)
+    if mode in ['active', 'passive']:
+        if not nxapi_lib.feature_enabled(device, 'lacp'):
+            module.fail_json(msg='LACP feature needs to be enabled first')
+
+    changed = False
+
+    args = dict(group=group, mode=mode, min_links=min_links, members=members)
+
+    proposed = {}
+    for param, value in args.iteritems():
+        if value:
+            proposed[param] = value
+
+    existing = nxapi_lib.get_portchannel(device, group)
+
+    commands = []
+    changed = False
+    active_portchannels = nxapi_lib.get_portchannel_list(device)
+    if state == 'absent':
+        if existing:
+            command = nxapi_lib.get_commands_to_remove_portchannel(device,
+                                                                   group)
+            commands.append(command)
+    elif state == 'present':
+        if group not in active_portchannels:
+            command = nxapi_lib.config_portchannel(proposed, mode, group)
+            commands.append(command)
+
+        elif existing and group in active_portchannels:
+            command = nxapi_lib.get_commands_to_remove_members(proposed,
+                                                               existing)
+            commands.append(command)
+
+            command = nxapi_lib.get_commands_to_add_members(proposed, existing)
+            commands.append(command)
+
+            command = nxapi_lib.get_commands_if_mode_change(proposed,
+                                                            existing,
+                                                            group,
+                                                            mode)
+            # Needs to be first in the list in order to allow for port-channel
+            # to be removed, re-added with new mode, and so more members
+            # can be added in the same Ansible task
+            commands.insert(0, command)
+
+            if min_links:
+                command = get_commands_min_links(existing,
+                                                 proposed,
+                                                 group,
+                                                 min_links)
+                commands.append(command)
+    cmds = ''
+    if commands:
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+
+    if cmds:
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            device.config(cmds)
+
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['new'] = nxapi_lib.get_portchannel(device, group)
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

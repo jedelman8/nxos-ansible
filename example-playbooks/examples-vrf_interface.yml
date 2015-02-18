@@ -1,0 +1,17 @@
+---
+
+- name: vrf interface testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # ensure vrf yankees exists on Eth1/1
+    - nxos_vrf_interface: vrf=yankees interface=Ethernet1/1 host={{ inventory_hostname }} state=present
+
+    # ensure yankees VRF does not exist on Eth1/1
+    - nxos_vrf_interface: vrf=yankees interface=Ethernet1/1 host={{ inventory_hostname }} state=absent
+
+    ##### vrf isn't read from interface properly until and IP Address is set.
+    ###### removing a vrf still removes l3 configs

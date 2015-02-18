@@ -1,0 +1,24 @@
+---
+
+- name: command testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # Get CLI raw text output for a given command
+    - nxos_command: command='show run interface mgmt0 | inc description' host={{ inventory_hostname }} text=true type=show
+
+    # Get structured JSON data for given command
+    - nxos_command: command='show interface Ethernet1/1' host={{ inventory_hostname }} type=show
+
+    # Configure secondary interface on Eth1/2 with command as string
+    - nxos_command: command='interface Eth1/2,ip address 5.5.5.5/24 secondary' host={{ inventory_hostname }} type=config
+
+    # Configure secondary interface on Eth1/2 with command as list
+    - nxos_command:
+        host: "{{ inventory_hostname }}"
+        type: config
+        command: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']

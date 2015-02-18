@@ -1,0 +1,19 @@
+---
+
+- name: ping testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # test reachability to 8.8.8.8 using mgmt vrf
+    - nxos_ping: dest=8.8.8.8 vrf=management host={{ inventory_hostname }}
+
+    # Test reachability to a few different public IPs using mgmt vrf
+    # if device has name lookups turned on, you can use names
+    - nxos_ping: dest={{ item }} vrf=management host={{ inventory_hostname }}
+      with_items:
+        - 8.8.8.8
+        - 4.4.4.4
+        - 198.6.1.4

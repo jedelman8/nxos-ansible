@@ -1,0 +1,243 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: nxos_vpc_interface
+short_description: Manages interface VPC configuration
+description:
+    - Manages interface VPC configuration
+author: Cisco Systems Inc.
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco v0.1.3
+notes:
+    - Either vpc or peer_link param is required, but not both.
+    - State=absent removes whatever VPC config is on a port-channel
+      if one exists.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    portchannel:
+        description:
+            - group number of the portchannel that will be configured
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    vpc:
+        description:
+            - vpc group/id that will be configured on associated portchannel
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    peer_link:
+        description:
+            - Set to true/false for peer link config on assoicated portchannel
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Manages desired state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http']
+        aliases: []
+'''
+EXAMPLES = '''
+# config portchannel10 to be the peerlink
+#- nxos_vpc_interface: portchannel=10 peer_link=true host={{ inventory_hostname }}
+
+# config portchannel20 to be vpc20
+#- nxos_vpc_interface: portchannel=20 vpc=20 host={{ inventory_hostname }}
+
+# remove whatever VPC config is on portchannel if any exists (vpc xx or vpc peer-link)
+- nxos_vpc_interface: portchannel=80 host={{ inventory_hostname }} state=absent
+'''
+
+try:
+    import socket
+    from pycisco.nxos.device import Device
+    from pycisco.nxos.device import Auth
+    from pycisco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            portchannel=dict(required=True, type='str'),
+            vpc=dict(type='str'),
+            peer_link=dict(choices=BOOLEANS, type='bool'),
+            state=dict(choices=['absent', 'present'], default='present'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    host = socket.gethostbyname(module.params['host'])
+
+    portchannel = module.params['portchannel']
+    vpc = module.params['vpc']
+    peer_link = module.params['peer_link']
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password)
+    device.open()
+
+    changed = False
+    # args = dict(portchannel=portchannel, vpc=vpc, peer_link=peer_link)
+
+    if not nxapi_lib.feature_enabled(device, 'vpc'):
+        module.fail_json(msg='VPC feature needs to be enabled first')
+    config_value = None
+    if state == 'present':
+        if vpc and (peer_link or peer_link is False):
+            module.fail_json(msg="Only one of the params ['vpc', 'peer_link'] "
+                             + "should be used at a given time")
+
+        if vpc or (peer_link or peer_link is False):
+            if portchannel not in nxapi_lib.get_portchannel_list(device):
+                module.fail_json(msg="The portchannel you are trying to make a"
+                                 + " VPC or PL is not created yet.  "
+                                 + "Create it first!")
+
+        if not (vpc or (peer_link or peer_link is False)):
+            module.fail_json(msg="At least one of the params"
+                             + "['vpc', 'peer_link'] is required")
+        active_peer_link = None
+        if vpc:
+            mapping = \
+                nxapi_lib.get_existing_portchannel_to_vpc_mappings(device)
+            if vpc in mapping.keys() and portchannel != mapping[vpc][-2:]:
+                module.fail_json(msg="This vpc is already configured on "
+                                 + "another portchannel.  Remove it first "
+                                 + "before trying to assign it here. ",
+                                 existing_portchannel=mapping[vpc])
+
+            for vpcid, existing_pc in mapping.iteritems():
+                if portchannel == existing_pc[-2:] and vpcid != vpc:
+                    module.exit_json(msg="This portchannel already has another"
+                                     + " VPC configured.  Remove it first "
+                                     + "before assigning this one",
+                                     existing_vpc=vpcid)
+            if nxapi_lib.peer_link_exists(device):
+                active_peer_link = nxapi_lib.get_active_vpc_peer_link(device)
+                if active_peer_link[-2:] == portchannel:
+                    module.fail_json(msg="That port channel is the current"
+                                     + " PEER LINK.  Remove it if you want it"
+                                     + " to be a VPC")
+            config_value = vpc
+
+        elif (peer_link or peer_link is False):
+            if nxapi_lib.peer_link_exists(device):
+                active_peer_link = \
+                    nxapi_lib.get_active_vpc_peer_link(device)[-2:]
+                if active_peer_link != portchannel:
+                    if peer_link:
+                        module.fail_json(msg="A peer link already exists on"
+                                         + " the device.  Remove it first",
+                                         current_peer_link='Po'
+                                         + active_peer_link)
+            config_value = 'peer-link'
+
+    proposed = dict(portchannel=portchannel, config_value=config_value)
+    existing = nxapi_lib.get_portchannel_vpc_config(device, portchannel)
+    commands = []
+
+    if state == 'present':
+        if peer_link is False and portchannel != active_peer_link:
+            # this is offering the user the ability to do portchannel=XX and
+            # peer_link=false just
+            # to ensure that the portchannel is not a peer-link
+            pass
+        elif not existing:
+            command = nxapi_lib.get_commands_to_config_vpc_interface(
+                portchannel,
+                proposed['config_value']
+                )
+            commands.append(command)
+        elif (
+                (vpc and (existing != config_value)) or
+                (peer_link is False and config_value == 'peer-link')
+                ):
+            command = nxapi_lib.get_commands_to_remove_vpc_interface(
+                portchannel,
+                proposed['config_value']
+                )
+            commands.append(command)
+
+    elif state == 'absent':
+        if existing:
+            command = ['no vpc ' + existing]
+            commands.append(command)
+            commands.insert(0, ['interface port-channel' + portchannel])
+    cmds = ''
+    if commands:
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+
+    if cmds:
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            device.config(cmds)
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['new'] = nxapi_lib.get_portchannel_vpc_config(device, portchannel)
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()
