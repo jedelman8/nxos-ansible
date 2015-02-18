@@ -160,6 +160,13 @@ cisco@onepk:~/ansible$
 
 **Step 3: Clone this repository** 
 
+Ensure git is installed
+
+```
+cisco@onepk:~/ansible$ sudo apt-get install git
+```
+
+
 ```
 cisco@onepk:~/ansible$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
@@ -171,14 +178,24 @@ Note: this is being done to ensure the `ansible-doc` utility works for these mod
 **Step 1: Create a new directory for the modules**
 
 ```
-cisco@onepk:~/ansible$ sudo mkdir /usr/share/ansible/cisco_nxos
+cisco@onepk:~/ansible$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
 ```
+
+> Note: If Step 1 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 1 and Step 2.  Based on how Ansible is installed, this may vary.
 
 **Step 2: Move the modules into the new directory**
 
+Navigate to the new directory
 ```
-cisco@onepk:~/ansible$ mv library/nxos_* /usr/share/ansible/cisco_nxos/
+cisco@onepk:~/ansible$ cd nxos-ansible/
+cisco@onepk:~/ansible/nxos-ansible$ 
 ```
+
+Now move the modules
+```
+cisco@onepk:~/ansible$ sudo mv library/nxos_* /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
+```
+
 
 ### Cisco Nexus Switches
 At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically just means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
@@ -204,9 +221,9 @@ For the mgmt0 interface and outbound connectivity, there are a few things that n
 3. Test connectivity between the Ansible control host and mgmt0 (remember if you are using Virtualbox or Fusion with a NAT configuration, you won't be able to ping from your switch to your VM)
 
 # Getting Familiar with Ansible
-Ansible is an extremely robust IT automation framework, so to understand what it is fully capable of, please consult the official [Ansible docs](http://docs.ansible.com/).  We'll cover the basics to show how to get started.  First, you need to understand a few things about basic Ansible terminology that we'll review here.  
+Ansible is an extremely robust IT automation framework, so to understand what it is fully capable of, please consult the official [Ansible docs](http://docs.ansible.com/).  We'll just be covering the basics to show how to get started.  First, you need to understand a few things about basic Ansible terminology that we'll review here.  
 
-The terms that you must understand include playbooks, plays, tasks, and modules.  A playbook is a YAML file that has any number of plays in which each play can have one or more tasks in which you want to automate.  Each task "calls" an Ansible module which executes the code required to accomplish the given task.  Make sense?  We'll dive into these concepts using a few examples in the following sections.
+The terms that you must understand include playbooks, plays, tasks, and modules.  A playbook is a YAML file that has any number of plays in which each play can have one or more tasks in which you want to automate.  Each task "calls" an Ansible module which executes the code required to accomplish the given task.  Clear as mud?  We'll dive into these concepts using a few examples in the following sections.
 
 * [Example Playbook](#example-playbook)
 * [Hosts File](#hosts-file)
@@ -214,7 +231,7 @@ The terms that you must understand include playbooks, plays, tasks, and modules.
 
 ### Example Playbook
 
-A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in a new directory called `ansible` that exists in your home directory.  We'll refer to this as the current Ansible **working directory**  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/ansible/nexus-automation.yml`. 
+A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/ansible/nxos-ansible/nexus-automation.yml`. 
 
 ```
 ---
@@ -259,7 +276,7 @@ n3k1
 n3k2
 ```
 
-In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/hosts`
+In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/nxos-ansible/hosts`
 
 The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k2, n9k3, n9k4 for all tasks in a given play.
 
@@ -269,7 +286,7 @@ The same play could have used `hosts: spine` instead of `hosts: n9k1` in order t
 
 ### Executing Ansible Playbooks
 
-By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/ansible/`)
+By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/ansible/nxos-ansible/`)
 
 To execute the playbook, the following terminal command is used:
 ```
@@ -355,7 +372,7 @@ rtp
 richardson
 ```
 
-Second is in a file called `all.yml` that needs to be created and stored in a `group_vars` directory.  The path to this file should be the ansible working directory `group_vars/all.yml`, so for this complete example it would be `/home/cisco/ansible/group_vars/all.yml`  Any variables found in `all.yml` can be accessed by any device (within their scope during playbook execution).
+Second is in a file called `all.yml` that needs to be created and stored in a `group_vars` directory.  The path to this file should be the ansible working directory `group_vars/all.yml`, so for this complete example it would be `/home/cisco/ansible/nxos-ansible/group_vars/all.yml`  Any variables found in `all.yml` can be accessed by any device (within their scope during playbook execution).
 
 `all.yml` looks like the following:
 
@@ -369,21 +386,21 @@ The third location we'll store variables is in host specific variables files.  A
 
 These three files look like the following:
 
-File: `/home/cisco/ansible/host_vars/sjc.yml`
+File: `/home/cisco/ansible/nxos-ansible/host_vars/sjc.yml`
 
 ```
 ---
 mgmt_ip: 10.1.30.1
 ```
 
-File: `/home/cisco/ansible/host_vars/rtp.yml`
+File: `/home/cisco/ansible/nxos-ansible/host_vars/rtp.yml`
 
 ```
 ---
 mgmt_ip: 10.1.40.1
 ```
 
-File: `/home/cisco/ansible/host_vars/richardson.yml`
+File: `/home/cisco/ansible/nxos-ansible/host_vars/richardson.yml`
 
 ```
 ---
@@ -587,11 +604,11 @@ Playbook:
     - name: config for all interfaces
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items: {{ leaf_ports }}
-    # note: leaf_ports is a variable defined in /home/cisco/ansible/group_vars/leaf.yml  
+    # note: leaf_ports is a variable defined in /home/cisco/ansible/nxos-ansible/group_vars/leaf.yml  
 
 ```
 
-Inside: `/home/cisco/ansible/group_vars/leaf.yml`
+Inside: `/home/cisco/ansible/nxos-ansible/group_vars/leaf.yml`
 
 ```
 ---
@@ -827,7 +844,7 @@ PLAY RECAP ********************************************************************
 n9k1                       : ok=2    changed=1    unreachable=0    failed=0   
 ```
 
-Looking at the contents of the file created at `/home/cisco/ansible/configs/neighbors.json`
+Looking at the contents of the file created at `/home/cisco/ansible/nxos-ansible/configs/neighbors.json`
 
 ```
 cisco@onepk:~/ansible$ cat configs/neighbors.json 
