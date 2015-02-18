@@ -231,7 +231,7 @@ The terms that you must understand include playbooks, plays, tasks, and modules.
 
 ### Example Playbook
 
-A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/ansible/nxos-ansible/nexus-automation.yml`. 
+A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**.  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/ansible/nxos-ansible/nexus-automation.yml`. 
 
 ```
 ---
@@ -251,7 +251,7 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 ```
 
 
-As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  The inventory (or hosts) file is also an important component of Ansible that will be covered below.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
+As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your name!  The inventory (or hosts) file is also an important component of Ansible that will be covered below.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
 
 Just below those four k-v pairs, there is a list of tasks that will be automated.  The first and second tasks both call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
@@ -276,7 +276,9 @@ n3k1
 n3k2
 ```
 
-In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/nxos-ansible/hosts`
+In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/nxos-ansible/hosts`.
+
+> Note: the names in the hosts file should match what you have in DNS, the `/etc/hosts/` file, or the mgmt IP Address of the switch.
 
 The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k2, n9k3, n9k4 for all tasks in a given play.
 
@@ -290,15 +292,15 @@ By now, you should have a very high level understanding of the layout of an Ansi
 
 To execute the playbook, the following terminal command is used:
 ```
-cisco@onepk:~/ansible$ ansible-playbook -i hosts nexus-automation.yml
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
 ```
 
 `-i hosts` tells the system which **i**nventory hosts file to use.
 
 In order to not have to continuously state where the hosts file, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory (where your playbook and hosts exist), you can perform the following commands.
 ```
-cisco@onepk:~/ansible$ export ANSIBLE_HOSTS=hosts                
-cisco@onepk:~/ansible$ ansible-playbook nexus-automation.yml     
+cisco@onepk:~/ansible/nxos-ansible$ export ANSIBLE_HOSTS=hosts                
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook nexus-automation.yml     
 ```
 
 That covers some of the basics to get started with Ansible.  The next section walks through how to use an Ansible core module called `template` that can help in creating network device templates and simplify how configuration files are created for network devices of all types.
@@ -432,7 +434,7 @@ This playbook will leverage the newly created hosts file, all.yml, three differe
 
 Putting this all together, we'll now be able to execute the playbook.
 ```
-cisco@onepk:~/ansible$ ansible-playbook config-builder.yml
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook config-builder.yml
 
 PLAY [template building] ****************************************************** 
 
@@ -454,9 +456,9 @@ sjc                        : ok=1    changed=1    unreachable=0    failed=0
 You can verify the config files were created by navigating to the `configs` directory and checing out the new config files.
 
 ```
-cisco@onepk:~/ansible$ cd configs
-cisco@onepk:~/ansible/configs$ 
-cisco@onepk:~/ansible/configs$ cat sjc.cfg 
+cisco@onepk:~/ansible/nxos-ansible$ cd configs
+cisco@onepk:~/ansible/nxos-ansible/configs$ 
+cisco@onepk:~/ansible/nxos-ansible/configs$ cat sjc.cfg 
 
 hostname sjc
 
@@ -468,11 +470,11 @@ snmp-server 192.168.100.12
 
 username cisco password cisco
 
-cisco@onepk:~/ansible/configs$ 
+cisco@onepk:~/ansible/nxos-ansible/configs$ 
 ```
 
 ```
-cisco@onepk:~/ansible/configs$ cat nyc.cfg 
+cisco@onepk:~/ansible/nxos-ansible/configs$ cat nyc.cfg 
 
 hostname nyc
 
@@ -763,7 +765,7 @@ Plabyook:
 
 Whent this playbook is run for a single device, it looks like this:
 ```
-cisco@onepk:~/ansible$ ansible-playbook get-neighbors.yml
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook get-neighbors.yml
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -830,7 +832,7 @@ Playbook:
 
 Executing this playbook:
 ```
-cisco@onepk:~/ansible$ ansible-playbook get-neighbors.yml
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook get-neighbors.yml
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -847,7 +849,7 @@ n9k1                       : ok=2    changed=1    unreachable=0    failed=0
 Looking at the contents of the file created at `/home/cisco/ansible/nxos-ansible/configs/neighbors.json`
 
 ```
-cisco@onepk:~/ansible$ cat configs/neighbors.json 
+cisco@onepk:~/ansible/nxos-ansible$ cat configs/neighbors.json 
 
 [
     {
@@ -881,7 +883,7 @@ cisco@onepk:~/ansible$ cat configs/neighbors.json
         "platform": "N9K-C9396PX"
     }
 ]
-cisco@onepk:~/ansible$ 
+cisco@onepk:~/ansible/nxos-ansible$ 
 
 ```
 
@@ -1078,7 +1080,7 @@ For this example, the switch already has VLAN 10 present, but has the name web_s
 Let's see what happens when running the playbook in verbose mode.
 
 ```
-cisco@onepk:~/ansible$ ansible-playbook onetest.yml -v
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml -v
 
 PLAY [testing verbose mode] *************************************************** 
 
@@ -1093,7 +1095,7 @@ name APP_SEGMENT ; exit ;"}, "existing": {"10": {"admin_state": "down",
 PLAY RECAP ******************************************************************** 
 n9k1                       : ok=1    changed=1    unreachable=0    failed=0   
 
-cisco@onepk:~/ansible$ 
+cisco@onepk:~/ansible/nxos-ansible$ 
 ```
 
 You can see multiple key-value pairs are returned.  They include the commands executed on the switch, but also the existing, new, and proposed values.  These key-value pairs can now be stored in a playbook using the `register` helper module and used as inputs to other tasks or in Jinja2 templates.
@@ -1122,7 +1124,7 @@ Playbook:
 This example has a default config on interface Ethernet1/1 and produces the following output when the playbook is run in check mode.
 
 ```
-cisco@onepk:~/ansible$ ansible-playbook onetest.yml --check
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml --check
 
 PLAY [testing check mode] ***************************************************** 
 
@@ -1136,7 +1138,7 @@ n9k1                       : ok=1    changed=1    unreachable=0    failed=0
 Here you now know there WILL be a change when the playbook is run.  To see these commands, add in the `-v` flag to run in verbose mode as shown here:
 
 ```
-cisco@onepk:~/ansible$ ansible-playbook onetest.yml --check -v
+cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml --check -v
 
 PLAY [testing check mode] ***************************************************** 
 
