@@ -268,19 +268,18 @@ The inventory hosts file is an ini based file.  The hosts file for the above exa
 [spine]
 n9k1
 n9k2
+
+[leaf]
 n9k3
 n9k4
 
-[leaf]
-n3k1
-n3k2
 ```
 
 In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/nxos-ansible/hosts`.
 
 > Note: the names in the hosts file should match what you have in DNS, the `/etc/hosts/` file, or the mgmt IP Address of the switch.
 
-The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k2, n9k3, n9k4 for all tasks in a given play.
+The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k for all tasks in a given play or `hosts: all` to automate all hosts.
 
 > Note: you may have noticed `{{ inventory_hostname }}` in the playbook.  Double curly braces are used to reference variables and it's worth noting that `inventory_hostname` is an internal / built-in Ansible variable.  This variable is equivalent to the hostname as defined in the hosts file as the hosts get iterated through to execute the set of tasks in the playbook.  In this previous example, this means that `n9k1` would get sent to the Ansible module during the first task run, `n9k2` for the second run, and so on, etc.
 
@@ -316,9 +315,18 @@ That covers some of the basics to get started with Ansible.  The next section wa
 
 The previous sections gave a high level overview of Ansible and reviewed an example playbook.  In this section, we'll look at how to use Ansible to template build configurations for network devices by walking through another playbook and learning a bit more about Ansible.
 
-First, we'll ensure the inventory `hosts` file looks like the following (if you don't wish to overwrite an existing hosts file, create a new working dir or use `-i <hosts_file_name>` when executing the playbook:
+First, we'll ensure the inventory `hosts` file looks like the following.  We are just adding a new group of device hostnames:
 
 ```
+[spine]
+n9k1
+n9k2
+
+[leaf]
+n9k3
+n9k4
+
+[wan]
 boston
 nyc
 sjc
@@ -332,7 +340,9 @@ In this section, we'll be using the Ansible core module called `template` to aut
 
 ### Creating the Configs Directory
 
-This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` that exists in the working directory (`mkdir configs`).  It's location should be `/home/cisco/configs`
+This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` that exists in the working directory (`mkdir configs`).
+
+>Note: assuming you are following along and cloned the repo, this directory will already exist in your working directory.
 
 ### Creating a Template
 
@@ -352,7 +362,9 @@ username cisco password cisco
 
 ```
 
-Note: this is an extremely basic config template.  It is possible to get much more robust with how templates are created using Ansible with different variables per site, region, etc.
+>Note: assuming you are following along and cloned the repo, this template will already exist in your working directory within the `templates` directory.
+
+>Note: this is an extremely basic config template.  It is possible to get much more robust with how templates are created using Ansible with different variables per site, region, etc.
 
 For more details on Jinja2, please reference the official Jinja2 [docs](http://jinja.pocoo.org/docs/dev/).
 
@@ -374,9 +386,11 @@ rtp
 richardson
 ```
 
-Second is in a file called `all.yml` that needs to be created and stored in a `group_vars` directory.  The path to this file should be the ansible working directory `group_vars/all.yml`, so for this complete example it would be `/home/cisco/ansible/nxos-ansible/group_vars/all.yml`  Any variables found in `all.yml` can be accessed by any device (within their scope during playbook execution).
+Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.  
 
-`all.yml` looks like the following:
+The path to this file should be the ansible working directory `group_vars/wan.yml`, so for this complete example it would be `/home/cisco/ansible/nxos-ansible/group_vars/wan.yml`  Any variables found in `wan.yml` can be accessed by any device in the WAN group within the hosts file.
+
+`wan.yml` looks like the following:
 
 ```
 ---
@@ -385,6 +399,9 @@ snmp_server: 192.168.100.12
 ```
 
 The third location we'll store variables is in host specific variables files.  Also within the working directory, create a new dir called `host_vars`.  The dir should contain as many files that are required that contain variables that can only be used for and by specific devices.  In this example, we'll create three new yaml files that exist within the `host_vars` directory.  They are `sjc.yml`, `rtp.yml`, and `richardson.yml`.  These file names must match the name of the device as defined in the inventory hosts file.
+
+> Variables can also be stored in the all.yml file that would exist in the group_vars directory.
+
 
 These three files look like the following:
 
