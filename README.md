@@ -340,13 +340,16 @@ In this section, we'll be using the Ansible core module called `template` to aut
 
 ### Creating the Configs Directory
 
-This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` that exists in the working directory (`mkdir configs`).
+This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` (`mkdir configs`) that exists in the working directory (`/home/cisco/ansible/nxos-ansible/configs`).
 
 >Note: assuming you are following along and cloned the repo, this directory will already exist in your working directory.
 
 ### Creating a Template
 
 Ansible integrates natively with Jinja2 templates, so that's what will be used here.  Create a new file called router.j2 in the working directory.
+
+>Note: assuming you are following along and cloned the repo, this template will already exist in your working directory within the `templates` directory.
+
 
 The contents should look like the following:
 ```
@@ -362,7 +365,7 @@ username cisco password cisco
 
 ```
 
->Note: assuming you are following along and cloned the repo, this template will already exist in your working directory within the `templates` directory.
+
 
 >Note: this is an extremely basic config template.  It is possible to get much more robust with how templates are created using Ansible with different variables per site, region, etc.
 
@@ -376,9 +379,18 @@ The other variables found in the Jinja template can be defined in a number of lo
 
 > Note: for more detail about variables and variables scope, please reference the Ansible [variables docs](http://docs.ansible.com/playbooks_variables.html).
 
-First, variables can be defined in the hosts file.  
+First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.
 
 ```
+[spine]
+n9k1
+n9k2
+
+[leaf]
+n9k3
+n9k4
+
+[wan]
 boston  mgmt_ip=10.1.10.1
 nyc  mgmt_ip=10.1.20.1
 sjc
@@ -386,7 +398,7 @@ rtp
 richardson
 ```
 
-Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.  
+Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.  As was seen already, this file is probably already exists if you cloned the repo.
 
 The path to this file should be the ansible working directory `group_vars/wan.yml`, so for this complete example it would be `/home/cisco/ansible/nxos-ansible/group_vars/wan.yml`  Any variables found in `wan.yml` can be accessed by any device in the WAN group within the hosts file.
 
@@ -434,7 +446,7 @@ In the working directory, we'll now create a new playbook called `config-builder
 ---
 
 - name: template building
-  hosts: all
+  hosts: wan
   connection: local
   gather_facts: no
 
@@ -528,6 +540,9 @@ n9k4
 > The examples shown could be deployed in one large playbook, but they are being shown individually below in order to make them more digestable and easier to test.
 
 Example 1: Wipe out up logical interfaces and shut down all Ethernet interfaces
+
+> Since we are using `hosts: all` you will need to remove the `wan` group from the hosts file.  Otherwise, just change the groups you are automating!
+
 
 Playbook:
 ```
