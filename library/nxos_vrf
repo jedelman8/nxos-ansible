@@ -86,9 +86,9 @@ EXAMPLES = '''
 
 try:
     import socket
-    from pycisco.nxos.device import Device
-    from pycisco.nxos.device import Auth
-    from pycisco.nxos.utils import nxapi_lib
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import nxapi_lib
 except ImportError as e:
     print '*' * 30
     print e

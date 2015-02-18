@@ -69,8 +69,8 @@ EXAMPLES = '''
 try:
     import xmltodict
     import socket
-    from pycisco.nxos.device import Device
-    from pycisco.nxos.device import Auth
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
 except ImportError as e:
     print '*' * 30
     print e
