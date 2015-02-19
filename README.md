@@ -34,10 +34,10 @@ Network Automation with Ansible and Cisco Nexus Switches
 # Introduction
 With the Cisco Nexus series switches, Cisco offers two modes of operation: Application Centric Infrastructure (ACI) mode and standalone mode.  In the ACI mode of operation, Cisco Nexus 9000 hardware can be deployed along with the Application Policy Infrastructure Controller (APIC) to deploy and manage the network as a single system.  Since not all Nexus installs may result in an ACI deployment, Cisco offers other types of programmability and automation options for when Nexus switches are deployed in standalone mode.  These include Python on-box, the support for on-box Linux Containers (LXC) in which the user can install 3rd party automation packages, Puppet, Chef, and a device API (called NX-API).  
 
-In addition to all of these existing options, there is now integration (found in this repo) with Ansible, another very popular DevOps automation tool.  Integration between Ansible and the Nexus platform occurs by using Ansible's open and extensible framework along with the NX-API found on a few different Nexus platforms.  
+In addition to the existing options, there is now integration (found in this repo) with Ansible, another very popular DevOps automation tool.  Integration between Ansible and the Nexus platform occurs by using Ansible's open and extensible framework along with the NX-API found on a few different Nexus platforms (not just the N9K).  
 
 # What is Ansible
-Ansible is an open source IT configuration management and automation tool.  Similar to Puppet and Chef, Ansible has made a name for itself among system adminstrators that need to manage, automate, and orchestrate various types of server environments.  Unlike Puppet and Chef, Ansible is agent-less, and does not require a software agent to be installed on the target node (server or switch) in order to automate the device.  By default, Ansible requires SSH and Python support on the target node, but Ansible can also be easily extended to use any API.  In the Ansible modules developed for NX-OS as part of this project, Ansible modules make API calls against the NX-API to gather real-time state data and to make configuration changes on Cisco Nexus devices.
+Ansible is an open source IT configuration management and automation tool.  Similar to Puppet and Chef, Ansible has made a name for itself among system adminstrators that need to manage, automate, and orchestrate various types of server environments.  Unlike Puppet and Chef, Ansible is agentless, and does not require a software agent to be installed on the target node (server or switch) in order to automate the device.  By default, Ansible requires SSH and Python support on the target node, but Ansible can also be easily extended to use any API.  In the Ansible modules developed for NX-OS as part of this project, Ansible modules make API calls against the NX-API to gather real-time state data and to make configuration changes on Cisco Nexus devices.
 
 For more on Ansible, please reference Ansible's [official docs](http://docs.ansible.com/).
 
@@ -59,9 +59,9 @@ Before going through examples, we'll first walk through getting a basic Ansible 
 * [Cisco Nexus Switches](#cisco-nexus-switches)
 
 ### Ansible Control Host
-Ansible does not require a dedicated server to be used.  In fact, many machines could have Ansible installed and they can be used to simultaneuously automate any given environment (not recommending that here, but it's definitely an option!). 
+Ansible does not require a dedicated server to be used.  In fact, many machines could have Ansible installed and they can be used to simultaneuously automate any given environment (not recommending that here, but it's definitely a nice option to have). 
 
-The setup that we are showing here will be using an Ubuntu machine from Cisco that is also called the all-in-one onePK Virtual Machine.  This VM can be downloaded from [Cisco's DevNet community site](https://developer.cisco.com/downloads/all-in-one-VM-1.3.0.181.ova).  It's worth noting the same steps would hold true for a fresh install of Ubuntu.  
+The setup that we are showing here will be using an Ubuntu machine from Cisco that is also called the all-in-one onePK Virtual Machine.  This VM can be downloaded from [Cisco's DevNet community site](https://developer.cisco.com/downloads/all-in-one-VM-1.3.0.181.ova).  It's worth noting the same steps would hold true for a fresh install of Ubuntu.  Testing has also worked on using Vagrant Ubuntu boxes.
 
 If you wish to use your own Linux Operating System (including MAC OS), you should follow the detailed [installation steps found on Ansible's website.](http://docs.ansible.com/intro_installation.html#getting-ansible)
 
@@ -83,7 +83,7 @@ sudo apt-get install python-pip
 sudo pip install ansible
 ```
 
-**Step 4 - Ensure SSH is installed** (not a requirement, but helpful and also required for the `copy` module)
+**Step 4 - Ensure SSH is installed** (not a requirement, but helpful and also required for the `nxos_copy` module)
 ```
 sudo apt-get install openssh-server
 ```
@@ -102,7 +102,7 @@ cisco@onepk:~$ cat /etc/hosts
 172.31.217.133  n9k1  # <<--- showing one Nexus 9000
 ```
 
-To make the change to the hosts file as shown above, any number of text editors like vi, vim, gedit, Sublime Text, etc. can be used.  To install gedit, you can issue the following terminal command: `sudo apt-get install gedit` and once it's installed, you can open the hosts file by issuing the command `sudo gedit /etc/hosts`. From there, make the change and save the file.  Of course, you can also do this with your text editor of choice too.
+To make the change to the hosts file as shown above, any number of text editors like vi, vim, gedit, Sublime Text, etc. can be used.  To install gedit, you can issue the following terminal command: `sudo apt-get install gedit` and once it's installed, you can open the hosts file by issuing the command `sudo gedit /etc/hosts`.  Same can be done with `vim`. From there, make the change and save the file.  Of course, you can also do this with your text editor of choice too.
 
 You should now be able to `ping n9k1` to get a response back from the MANAGEMENT IP address of the Nexus switch.  In our case, that is 172.31.217.133.
 
@@ -129,9 +129,16 @@ cisco:
 
 ```
 
+**Step 7 - ONLY FOR VAGRANT USERS**
+
+If you are using an Ubuntu box with Vagrant, also perform the following command:
+```
+$ sudo pip install markupsafe
+```
+
 
 ### Cisco Dependencies
-When you download and install Ansible, you get "batteries included" functionality for automating Linux environments.  You can do things like manage services, packages, files, etc., "out of the box" without any other required software.  However, Ansible "Core" does not offer the ability to manage and automate network devices. This functionality comes through custom integration (which is what we are showing here!).
+When you download and install Ansible, you get "batteries included" functionality for automating Linux environments.  You can do things like manage services, packages, files, etc., "out of the box" without any other required software.  However, Ansible "Core" does not offer the ability to manage and automate network devices. This functionality comes through custom integration (which is what we are showing here).
 
 In order to begin automating Cisco Nexus switches with Ansible, a few dependencies are required before actually using Ansible modules that communicate with Cisco Nexus switches.  These dependencies include a Python library called `xmltodict` that converts xml objects to JSON, but also two Python modules (wrappers and helper functions) used to communicate with NX-API devices.  
 
@@ -182,9 +189,9 @@ cisco@onepk:~/ansible$ sudo mv library/nxos_* /usr/local/lib/python2.7/dist-pack
 
 
 ### Cisco Nexus Switches
-At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically just means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
+At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
 
-The `feature` command is used to enable NX-API.  After it's enabled, ensure the device is listening on port 80.  The modules in this repo only operate using http/80.  Https/443 will come in the future.
+The `feature` command is used to enable NX-API.  After it's enabled, ensure the device is listening on port 80.  The modules in this repo only operate using http/80.  Https/443 to come in the future.
 
 ```
 n9k1# config t
@@ -215,7 +222,7 @@ The terms that you must understand include playbooks, plays, tasks, and modules.
 
 ### Example Playbook
 
-A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**.  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/nxos-ansible/nexus-automation.yml`. 
+A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**.  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/nxos-ansible/nexus-automation.yml`.  Feel free to create it and follow along.   
 
 ```
 ---
@@ -235,9 +242,9 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 ```
 
 
-As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!  The inventory (or hosts) file is also an important component of Ansible that will be covered below.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
+As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
 
-Just below those four k-v pairs, there is a list of tasks that will be automated.  The first and second tasks both call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
+Just below those four k-v pairs, there is a list of two tasks that will be automated.  The first and second tasks both call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
 > Note: Nearly all Cisco modules are idempotent, which means, if the device is already in the desired state, no change will be made.  A change will only be made if it's required to get the device into the desired state.  
 
@@ -257,17 +264,30 @@ n9k2
 n9k3
 n9k4
 
+[wan]
+boston  mgmt_ip=10.1.10.1
+nyc  mgmt_ip=10.1.20.1
+sjc
+rtp
+richardson
+
 ```
 
-In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/nxos-ansible/hosts`.
+Feel free to take a look at the `hosts` file.  Since you cloned the repo, just make sure you are in the `nxos-ansible` and issue the command: 
 
-> Note: the names in the hosts file should match what you have in DNS, the `/etc/hosts/` file, or the mgmt IP Address of the switch.
+`cisco@onepk:~/nxos-ansible$ cat hosts`
 
-The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k for all tasks in a given play or `hosts: all` to automate all hosts.
+You should see what is shown in the text above.  If you are only testing with a single switch, you can remove all other 9k# hosts from the inventory file.  If you don't, you'll get errors below as you run through the examples.
+
+> Note: You can disregard the `wan` section.  That'll be used in an upcoming example.
+
+> Note: the names in the hosts file should match what you have in DNS, the `/etc/hosts/` file, or it can just be the mgmt IP Address of the switch.
+
+The same play could have used `hosts: spine` instead of `hosts: n9k1` in order to automate n9k1, n9k2 for all tasks in a given play or `hosts: all` to automate all hosts.
 
 > Note: you may have noticed `{{ inventory_hostname }}` in the playbook.  Double curly braces are used to reference variables and it's worth noting that `inventory_hostname` is an internal / built-in Ansible variable.  This variable is equivalent to the hostname as defined in the hosts file as the hosts get iterated through to execute the set of tasks in the playbook.  In this previous example, this means that `n9k1` would get sent to the Ansible module during the first task run, `n9k2` for the second run, and so on, etc.
 
-> Note: names are not required for the Cisco modules.  IP Addresses work just fine too if DNS or the hosts file isn't defined.
+> Note: names are not required for the modules.  IP Addresses work just fine too if DNS or the hosts file isn't defined.
 
 ### Executing Ansible Playbooks
 
@@ -282,13 +302,14 @@ cisco@onepk:~/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
 
 After running the playbook, feel free to check the changes out on your switch.
 
-In order to not have to continuously state where the hosts file, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory (where your playbook and hosts exist), you can perform the following commands.
+In order to not have to continuously state where the hosts file is, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory, you can perform the following commands.
+
 ```
 cisco@onepk:~/nxos-ansible$ export ANSIBLE_HOSTS=hosts                
 cisco@onepk:~/nxos-ansible$ ansible-playbook nexus-automation.yml     
 ```
 
-That covers some of the basics to get started with Ansible.  The next section walks through how to use an Ansible core module called `template` that can help in creating network device templates and simplify how configuration files are created for network devices of all types.
+That covers some of the basics to get started with Ansible.  The next section walks through how to use an Ansible core module called `template` that can help in creating network device templates and simplify how configuration files are created for network devices of all types.  Following the templating section is when we'll cover using the Cisco specific Ansible modules.
 
 
 #### Network Configuration Templating
@@ -301,7 +322,7 @@ That covers some of the basics to get started with Ansible.  The next section wa
 
 The previous sections gave a high level overview of Ansible and reviewed an example playbook.  In this section, we'll look at how to use Ansible to template build configurations for network devices by walking through another playbook and learning a bit more about Ansible.
 
-First, we'll ensure the inventory `hosts` file looks like the following.  We are just adding a new group of device hostnames:
+First, we'll ensure the inventory `hosts` file looks like the following.  You should have the group `wan` and each hostname and variable underneath as shown here:
 
 ```
 [spine]
@@ -313,29 +334,27 @@ n9k3
 n9k4
 
 [wan]
-boston
-nyc
+boston  mgmt_ip=10.1.10.1
+nyc  mgmt_ip=10.1.20.1
 sjc
 rtp
 richardson
+
 ```
 
-> This example will run through building IOS router configurations.  This is to show that **templating** with Ansible has no direct correlation to the Nexus or NX-OS platform.  Note: the only requirement for Nexus is when you are using the custom Cisco Ansible modules.
+> This example will run through building IOS router configurations.  This is to show that **templating** with Ansible has no direct correlation to the Nexus or NX-OS platform.  Note: the only requirement for Nexus is when you are using the custom Cisco Ansible modules that'll be covered in the next section.
 
-In this section, we'll be using the Ansible core module called `template` to automate the creation of the configuration files required for routers that exist at the 5 locations listed in the hosts file.  First, we'll do two things before creating the configurations. (1) create a new directory that will store the final configs and (2) Create a very basic config template.
+In this section, we'll be using the Ansible core module called `template` to automate the creation of the configuration files required for routers that exist at the 5 locations listed in the hosts file.  First, we'll do two things before creating the configurations. (1) create a new directory that will store the final configs and (2) Create a very basic config template.  Again, this will have already been done for you if you cloned the repository.  
 
 ### Creating the Configs Directory
 
 This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` (`mkdir configs`) that exists in the working directory (`/home/cisco/nxos-ansible/configs`).
 
->Note: assuming you are following along and cloned the repo, this directory will already exist in your working directory.
-
 ### Creating a Template
 
-Ansible integrates natively with Jinja2 templates, so that's what will be used here.  Create a new file called router.j2 in the working directory.
+Ansible integrates natively with Jinja2 templates, so that's what will be used here.  Create a new file called routers.j2 in the working directory.
 
->Note: assuming you are following along and cloned the repo, this template will already exist in your working directory within the `templates` directory.
-
+>Note: since this is already in your repository, feel free to open it up to view it.  You can issue a `cat templates/routers.j2` to check it out.
 
 The contents should look like the following:
 ```
@@ -352,7 +371,6 @@ username cisco password cisco
 ```
 
 
-
 >Note: this is an extremely basic config template.  It is possible to get much more robust with how templates are created using Ansible with different variables per site, region, etc.
 
 For more details on Jinja2, please reference the official Jinja2 [docs](http://jinja.pocoo.org/docs/dev/).
@@ -365,7 +383,7 @@ The other variables found in the Jinja template can be defined in a number of lo
 
 > Note: for more detail about variables and variables scope, please reference the Ansible [variables docs](http://docs.ansible.com/playbooks_variables.html).
 
-First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.
+First, variables can be defined in the `hosts` file as you may have already noticed.
 
 ```
 [spine]
@@ -384,7 +402,7 @@ rtp
 richardson
 ```
 
-Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.  As was seen already, this file is probably already exists if you cloned the repo.
+Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.
 
 The path to this file should be the ansible working directory `group_vars/wan.yml`, so for this complete example it would be `/home/cisco/nxos-ansible/group_vars/wan.yml`  Any variables found in `wan.yml` can be accessed by any device in the WAN group within the hosts file.
 
@@ -396,10 +414,9 @@ ntp_server: 192.168.100.11
 snmp_server: 192.168.100.12
 ```
 
-The third location we'll store variables is in host specific variables files.  Also within the working directory, create a new dir called `host_vars`.  The dir should contain as many files that are required that contain variables that can only be used for and by specific devices.  In this example, we'll create three new yaml files that exist within the `host_vars` directory.  They are `sjc.yml`, `rtp.yml`, and `richardson.yml`.  These file names must match the name of the device as defined in the inventory hosts file.
+The third location we'll store variables is in host specific variables files.  Also within the working directory, there will be a new dir called `host_vars`.  The dir should contain as many files that are required that contain variables that can only be used for and by specific devices.  In this example, there will be three new yaml files that exist within the `host_vars` directory.  They are `sjc.yml`, `rtp.yml`, and `richardson.yml`.  These file names must match the name of the device as defined in the inventory hosts file.
 
 > Variables can also be stored in the all.yml file that would exist in the group_vars directory.
-
 
 These three files look like the following:
 
@@ -426,7 +443,7 @@ mgmt_ip: 10.1.50.1
 
 ### Creating a New Playbook
 
-In the working directory, we'll now create a new playbook called `config-builder.yml`. It should have the following contents:
+In the working directory, create a new playbook called `config-builder.yml`. It should have the following contents:
 
 ```
 ---
@@ -443,7 +460,7 @@ In the working directory, we'll now create a new playbook called `config-builder
     - template: src=templates/routers.j2 dest=configs/{{ inventory_hostname }}.cfg
 ```
 
-This playbook will leverage the newly created hosts file, all.yml, three different host variables files (hostname.yml), and the Jinja2 template.  
+This playbook will leverage the newly created hosts file, all.yml, three different host variables files (<hostname>.yml), and the Jinja2 template.  
 
 ### Dynamically Creating Config Files
 
@@ -510,7 +527,9 @@ In the sections that follow, we'll take a look at using the Cisco specific Ansib
 
 #### Automated Configuration Management
 
-We'll now walk through a few example playbooks used for automating configuration management.  For the examples, it can be assumed that the `hosts` file being used has several Nexus 9000 series switches such as this:
+We'll now walk through a few example playbooks used for automating configuration management.  For the examples, it can be assumed that the `hosts` file being used has several Nexus 9000 series switches such as what is shown below. If you only have one, that's fine.  Just make sure `hosts` file reflects that.
+
+**AND ALSO REMOVE THE `wan` GROUP**
 
 ```
 [spine]
@@ -525,7 +544,18 @@ n9k4
 
 > The examples shown could be deployed in one large playbook, but they are being shown individually below in order to make them more digestable and easier to test.
 
-If you are following along, feel free to name each example whatever you wish.  Remember they must be stored in your working directory and should be executed using `ansible-playbook <playbook_name>`. 
+If you are following along, you can build the playbooks yourself or move/copy them from the `example-playbooks` directory into the `nxos-ansible` directory.  The file name for each playbook can be seen below in the text on the first line of each playbook.  You can use the `mv` or `cp` commands to move the files accordingly.  To get them all at once, issue the following command:
+
+```
+cisco@onepk:~/nxos-ansible$ cp example-playbooks/readme-example*.yml .
+```
+
+
+And remember to execute each playbook, you use the following command:
+
+```
+cisco@onepk:~/nxos-ansible$ ansible-playbook <PLAYBOOKNAME.YML> -i hosts
+```
 
 Example 1: Wipe out up logical interfaces and shut down all Ethernet interfaces
 
@@ -693,6 +723,8 @@ Playbook:
 #### Automated Data Collection
 The previous examples showed how to use the Cisco Ansible modules to ensure the device configuration is in a desired state.  The next few examples will show how to extract, and then store, data from the Nexus switches.
 
+> **Note.  This example uses the username and password parameters in the playbook.  Feel free to remove them or correct them.**
+
 Example 5: Get neighbors
 
 Playbook:
@@ -718,12 +750,12 @@ Playbook:
 
 This playbook extracts neighbor information from the device.  
 
-**There are a few different options to view this data.**
+**There are a few different options to view the neighbor data from the previous example.**
 
-First, the playbook can be run in verbose mode.  This is done by using the `-v` parameter when running the playbook.  Example: `ansible-playbook playbook_name.yml -v`
+First, the playbook can be run in verbose mode.  This is done by using the `-v` parameter when running the playbook.  Example: `ansible-playbook readme-example5.yml -v`
 
 ```
-cisco@onepk:~/nxos-ansible$ ansible-playbook get-neighbors.yml -v
+cisco@onepk:~/nxos-ansible$ ansible-playbook readme-example5.yml -v
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -744,7 +776,7 @@ n9k1                       : ok=1    changed=0    unreachable=0    failed=0
 ```
 
 
-> Even when configuration changes are being made, you can use the `-v` parameter to extract valuable information.  Many modules return the state of resource being managed before and after the change along with the commands being sent to the device.
+> Note: Even when configuration changes are being made, you can use the `-v` parameter to extract valuable information.  Many modules return the state of resource being managed before and after the change along with the commands being sent to the device.
 
 Another option is to **register** the return data into a new variable and then use the **debug** module to dump it to the terminal  Take a look.
 
@@ -770,7 +802,7 @@ Plabyook:
       # neighbor data you'd want is in the key=resource
 ```
 
-Whent this playbook is run for a single device, it looks like this:
+Whent this playbook is run for a single device, it looks like this (using a different playbook name here):
 ```
 cisco@onepk:~/nxos-ansible$ ansible-playbook get-neighbors.yml
 
@@ -806,7 +838,7 @@ PLAY RECAP ********************************************************************
 n9k1                       : ok=2    changed=0    unreachable=0    failed=0  
 ```
 
-Another option is to dump the data to a file.  In order to do this, we'll first we'll use a small Jinja2 template that make this look a bit prettier.
+And yet another option is to dump the data to a file.  In order to do this, we'll first we'll use a small Jinja2 template that make this look a bit prettier.
 
 We'll store this template in our working directory and call this template neighbors.j2.  The contents of this file is just a single line.
 
@@ -901,7 +933,7 @@ You also have the flexibility to maniuplate this data and combine it with other 
 
 In addition to the examples in the previous sections, more examples have been posted for learning how to use the Cisco Ansible modules.
 
-A complete playbook that stands up a leaf/spine network running VPC can also be found in the examples directory.
+Feel free to contribute your example playbooks too.
 
 [See here](examples/)
 
@@ -921,7 +953,7 @@ Here is a very short list of some other things to know when working with Ansible
 
 ### ansible-doc
 
-Ansible offers built-in documentation (assuming the modules are properly documented).  All of the Cisco modules have been documented, so you can use the `ansible-doc` utility to better understand the parameters each module supports.  Here is one example of using `ansible-doc` for the `nxos_vpc module`.
+Ansible offers built-in documentation (assuming the modules are properly documented).  All of the Cisco modules have been documented, so you can use the `ansible-doc` utility to better understand the parameters each module supports.  Below is one example of using `ansible-doc` for the `nxos_vpc module`.
 
 Be sure to also check out the [Ansible Module Index](http://docs.ansible.com/modules_by_category.html) for much more detail on all of the Ansible core modules.
 
@@ -1110,7 +1142,7 @@ You can see multiple key-value pairs are returned.  They include the commands ex
 
 ### Dry Run Check Mode
 
-You can see what commands are actually pushed with using the `-v` flag, what about seeing commands will be sent to the device without actually pushing them?  This is possible by using dry run (or check mode).  In order to use check mode, run the playbook with the `--check` option.  
+You can see which commands are actually pushed when using the `-v` flag, but what about seeing which commands will be sent to the device without actually pushing them?  This is possible by using dry run (or check mode).  In order to use check mode, run the playbook with the `--check` option.  
 
 Here is an example using `--check`:
 
@@ -1142,7 +1174,7 @@ PLAY RECAP ********************************************************************
 n9k1                       : ok=1    changed=1    unreachable=0    failed=0  
 ```
 
-Here you now know there WILL be a change when the playbook is run.  To see these commands, add in the `-v` flag to run in verbose mode as shown here:
+Here you now know there **WILL** be a change when the playbook is run.  To see these commands, add in the `-v` flag to run in verbose mode as shown here:
 
 ```
 cisco@onepk:~/nxos-ansible$ ansible-playbook onetest.yml --check -v
@@ -1156,6 +1188,9 @@ PLAY RECAP ********************************************************************
 n9k1                       : ok=1    changed=1    unreachable=0    failed=0 
 
 ```
+
+Here you get to see which commands will be sent without actually sending them.  Very helpful for troubleshooting.
+
 
 ----
 
