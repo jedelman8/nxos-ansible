@@ -235,7 +235,7 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 ```
 
 
-As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your name!  The inventory (or hosts) file is also an important component of Ansible that will be covered below.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
+As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!  The inventory (or hosts) file is also an important component of Ansible that will be covered below.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
 
 Just below those four k-v pairs, there is a list of tasks that will be automated.  The first and second tasks both call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
@@ -271,7 +271,7 @@ The same play could have used `hosts: spine` instead of `hosts: n9k1` in order t
 
 ### Executing Ansible Playbooks
 
-By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/nxos-ansible/`)
+By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/nxos-ansible/`).  As with most files being reviewed in this document, they will have already been created and downloaded when you cloned the repository, but they are still being covered for completeness.
 
 To execute the playbook, the following terminal command is used:
 ```
@@ -279,6 +279,8 @@ cisco@onepk:~/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
 ```
 
 `-i hosts` tells the system which **i**nventory hosts file to use.
+
+After running the playbook, feel free to check the changes out on your switch.
 
 In order to not have to continuously state where the hosts file, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory (where your playbook and hosts exist), you can perform the following commands.
 ```
@@ -363,7 +365,7 @@ The other variables found in the Jinja template can be defined in a number of lo
 
 > Note: for more detail about variables and variables scope, please reference the Ansible [variables docs](http://docs.ansible.com/playbooks_variables.html).
 
-First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.
+First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.  This is a step you must perform if you are following along!
 
 ```
 [spine]
@@ -424,7 +426,7 @@ mgmt_ip: 10.1.50.1
 
 ### Creating a New Playbook
 
-In the working directory, we'll now create a new playbook called `config-builder.yml`. It will have the following contents:
+In the working directory, we'll now create a new playbook called `config-builder.yml`. It should have the following contents:
 
 ```
 ---
