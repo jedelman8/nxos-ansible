@@ -155,27 +155,27 @@ cisco@onepk:~$ sudo apt-get install git
 cisco@onepk:~$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
 
-**Step 3: Move the library directory**
+**Step 3: Move the contents of the library directory**
 
 Note: this is being done to ensure the `ansible-doc` utility works for these modules.  This utility is covered below.  Another option is to update the path for `ansible-doc`, but to ensure you do not have to consistently add new paths or use the same working directory, this is the better option.
 
-**Step 4: Create a new directory for the modules**
+**Create a new directory for the modules**
 
 ```
 cisco@onepk:~$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
 ```
 
-> **Note: If Step 4 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 1 and Step 2.  Based on how Ansible is installed, this may vary.**
+> **Note: If Step 3 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 3 and 4.  Based on how Ansible is installed, this may vary.**
 
-**Step 5: Move the modules into the new directory**
+**Step 4: Move the modules into the new directory**
 
-Navigate to the new directory
+**First, Navigate to the new directory**
 ```
 cisco@onepk:~$ cd nxos-ansible/
 cisco@onepk:~/nxos-ansible$ 
 ```
 
-Now move the modules
+**Then finally move the modules**
 ```
 cisco@onepk:~/ansible$ sudo mv library/nxos_* /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
 ```
