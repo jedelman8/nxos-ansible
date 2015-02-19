@@ -440,7 +440,7 @@ In the working directory, we'll now create a new playbook called `config-builder
   tasks:
 
     # Create config files
-    - template: src=templates/router.j2 dest=configs/{{ inventory_hostname }}.cfg
+    - template: src=templates/routers.j2 dest=configs/{{ inventory_hostname }}.cfg
 ```
 
 This playbook will leverage the newly created hosts file, all.yml, three different host variables files (hostname.yml), and the Jinja2 template.  
