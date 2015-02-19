@@ -597,6 +597,21 @@ Playbook:
 
 
   tasks:
+
+    - name: ensure ports in scope in this pb are L2 ports
+      nxos_interface: interface={{ item }} mode=layer 2 host={{ inventory_hostname }}
+      with_items:
+        - Ethernet2/1
+        - Ethernet2/2
+        - Ethernet2/3
+        - Ethernet2/4
+        - Ethernet2/7
+        - Ethernet2/8
+        - Ethernet2/9
+        - Ethernet2/10
+        - Ethernet2/11
+        - Ethernet2/12
+
     - name: leaf facing ports
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items:
@@ -626,10 +641,24 @@ Playbook:
 
 
   tasks:
+
+    - name: ensure ports in scope in this pb are L2 ports
+      nxos_interface: interface={{ item }} mode=layer 2 host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet1/2
+        - Ethernet1/3
+        - Ethernet1/4
+        - Ethernet2/1
+        - Ethernet2/2
+        - Ethernet2/3
+        - Ethernet2/4
+
     - name: config for all interfaces
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items: leaf_ports
     # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml  
+    # only a subset of interfaces are in this var list.  modify as you see fit.
 
 ```
 
@@ -680,7 +709,7 @@ Playbook:
     - name: portchannel 20 for peer link
       nxos_portchannel:
         group: 20
-        members: ['Ethernet2/9','Ethernet2/10,'Ethernet2/11','Ethernet2/12']
+        members: ['Ethernet2/9','Ethernet2/10','Ethernet2/11','Ethernet2/12']
         mode: 'active'
         host: "{{ inventory_hostname }}"
         state: present
