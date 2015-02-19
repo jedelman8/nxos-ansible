@@ -641,14 +641,8 @@ Playbook:
     - name: ensure ports in scope in this pb are default interfaces
       nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
       with_items:
-        - Ethernet1/1
-        - Ethernet1/2
-        - Ethernet1/3
-        - Ethernet1/4
-        - Ethernet2/1
-        - Ethernet2/2
-        - Ethernet2/3
-        - Ethernet2/4
+        - Ethernet1/49
+        - Ethernet1/50
 
     - name: config for a few interfaces on leafs
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
@@ -664,8 +658,8 @@ Inside: `/home/cisco/nxos-ansible/group_vars/leaf.yml`
 leaf_ports:
   - Ethernet1/1
   - Ethernet1/2
-  - Ethernet2/1
-  - Ethernet2/2
+  - Ethernet1/49
+  - Ethernet1/50
   # - ... Continue to include ALL interfaces on the switch
 ```
 
@@ -726,7 +720,7 @@ Playbook:
     - name: portchannel 100 facing spine
       nxos_portchannel:
         group: 100
-        members: ['Ethernet2/9','Ethernet2/10','Ethernet2/11','Ethernet2/12']
+        members: ['Ethernet1/49','Ethernet1/50']
         mode: 'active'
         host: "{{ inventory_hostname }}"
         state: present
