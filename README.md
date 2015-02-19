@@ -143,52 +143,36 @@ sudo pip install pycsco
 ### Cisco NX-OS Ansible Modules
 In addition to installing the dependencies, you'll now need the actual Ansible modules that will be used to automate and manage Cisco Nexus NX-API enabled systems.  Instead of just focusing on the modules, we'll clone the entire repo (that includes the modules), and then move the modules to a location to allow Ansible's built-in documentation to work.
 
-**Step 1: Create a new directory**
-
-Create a new directory called `ansible` and then clone the repo in that new directory.
+**Step 1: Ensure git is installed**
 
 ```
-cisco@onepk:~$ mkdir ansible
+cisco@onepk:~$ sudo apt-get install git
 ```
 
-**Step 2: Navigate to the new directory**
+**Step 2: Clone this repository**
 
 ```
-cisco@onepk:~$ cd ansible
-cisco@onepk:~/ansible$
+cisco@onepk:~$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
 
-**Step 3: Clone this repository** 
-
-Ensure git is installed
-
-```
-cisco@onepk:~/ansible$ sudo apt-get install git
-```
-
-
-```
-cisco@onepk:~/ansible$ git clone https://github.com/jedelman8/nxos-ansible.git
-```
-
-**Step 4: Move the library directory**
+**Step 3: Move the library directory**
 
 Note: this is being done to ensure the `ansible-doc` utility works for these modules.  This utility is covered below.  Another option is to update the path for `ansible-doc`, but to ensure you do not have to consistently add new paths or use the same working directory, this is the better option.
 
-**Step 1: Create a new directory for the modules**
+**Step 4: Create a new directory for the modules**
 
 ```
-cisco@onepk:~/ansible$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
+cisco@onepk:~$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
 ```
 
-> Note: If Step 1 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 1 and Step 2.  Based on how Ansible is installed, this may vary.
+> **Note: If Step 4 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 1 and Step 2.  Based on how Ansible is installed, this may vary.**
 
-**Step 2: Move the modules into the new directory**
+**Step 5: Move the modules into the new directory**
 
 Navigate to the new directory
 ```
-cisco@onepk:~/ansible$ cd nxos-ansible/
-cisco@onepk:~/ansible/nxos-ansible$ 
+cisco@onepk:~$ cd nxos-ansible/
+cisco@onepk:~/nxos-ansible$ 
 ```
 
 Now move the modules
@@ -231,7 +215,7 @@ The terms that you must understand include playbooks, plays, tasks, and modules.
 
 ### Example Playbook
 
-A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**.  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/ansible/nxos-ansible/nexus-automation.yml`. 
+A sample playbook is shown below.  Assume that this playbook is saved as `nexus-automation.yml` and is stored in your working directory - `nxos-ansible` --- the directory that was downloaded when you cloned the repo.  This will continuously be referred to as the current Ansible **working directory**.  Since this walk through is using the Cisco all-in-one onePK virtual machine, the full path to this file is: `/home/cisco/nxos-ansible/nexus-automation.yml`. 
 
 ```
 ---
@@ -275,7 +259,7 @@ n9k4
 
 ```
 
-In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/ansible/nxos-ansible/hosts`.
+In this example, the hosts file was saved as the file name `hosts`.  The full path for this file is `/home/cisco/nxos-ansible/hosts`.
 
 > Note: the names in the hosts file should match what you have in DNS, the `/etc/hosts/` file, or the mgmt IP Address of the switch.
 
@@ -287,19 +271,19 @@ The same play could have used `hosts: spine` instead of `hosts: n9k1` in order t
 
 ### Executing Ansible Playbooks
 
-By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/ansible/nxos-ansible/`)
+By now, you should have a very high level understanding of the layout of an Ansible playbook. It's worth taking a look at how Ansible playbooks are executed.  As stated above, the filename of the playbook is `nexus-automation.yml`.  The name of the inventory hosts file is called `hosts`.  For this example, ensure both are stored in the same working directory (`/home/cisco/nxos-ansible/`)
 
 To execute the playbook, the following terminal command is used:
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
+cisco@onepk:~/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
 ```
 
 `-i hosts` tells the system which **i**nventory hosts file to use.
 
 In order to not have to continuously state where the hosts file, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory (where your playbook and hosts exist), you can perform the following commands.
 ```
-cisco@onepk:~/ansible/nxos-ansible$ export ANSIBLE_HOSTS=hosts                
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook nexus-automation.yml     
+cisco@onepk:~/nxos-ansible$ export ANSIBLE_HOSTS=hosts                
+cisco@onepk:~/nxos-ansible$ ansible-playbook nexus-automation.yml     
 ```
 
 That covers some of the basics to get started with Ansible.  The next section walks through how to use an Ansible core module called `template` that can help in creating network device templates and simplify how configuration files are created for network devices of all types.
@@ -340,7 +324,7 @@ In this section, we'll be using the Ansible core module called `template` to aut
 
 ### Creating the Configs Directory
 
-This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` (`mkdir configs`) that exists in the working directory (`/home/cisco/ansible/nxos-ansible/configs`).
+This is straightforward.  A new directory will be created that will store the final config files rendered for each device in the hosts file.  We'll create a new directory called `configs` (`mkdir configs`) that exists in the working directory (`/home/cisco/nxos-ansible/configs`).
 
 >Note: assuming you are following along and cloned the repo, this directory will already exist in your working directory.
 
@@ -400,7 +384,7 @@ richardson
 
 Second is in a file called `wan.yml` that needs to be created and stored in a `group_vars` directory.  This group will match the group as defined in the `hosts` file.  As was seen already, this file is probably already exists if you cloned the repo.
 
-The path to this file should be the ansible working directory `group_vars/wan.yml`, so for this complete example it would be `/home/cisco/ansible/nxos-ansible/group_vars/wan.yml`  Any variables found in `wan.yml` can be accessed by any device in the WAN group within the hosts file.
+The path to this file should be the ansible working directory `group_vars/wan.yml`, so for this complete example it would be `/home/cisco/nxos-ansible/group_vars/wan.yml`  Any variables found in `wan.yml` can be accessed by any device in the WAN group within the hosts file.
 
 `wan.yml` looks like the following:
 
@@ -417,21 +401,21 @@ The third location we'll store variables is in host specific variables files.  A
 
 These three files look like the following:
 
-File: `/home/cisco/ansible/nxos-ansible/host_vars/sjc.yml`
+File: `/home/cisco/nxos-ansible/host_vars/sjc.yml`
 
 ```
 ---
 mgmt_ip: 10.1.30.1
 ```
 
-File: `/home/cisco/ansible/nxos-ansible/host_vars/rtp.yml`
+File: `/home/cisco/nxos-ansible/host_vars/rtp.yml`
 
 ```
 ---
 mgmt_ip: 10.1.40.1
 ```
 
-File: `/home/cisco/ansible/nxos-ansible/host_vars/richardson.yml`
+File: `/home/cisco/nxos-ansible/host_vars/richardson.yml`
 
 ```
 ---
@@ -463,7 +447,7 @@ This playbook will leverage the newly created hosts file, all.yml, three differe
 
 Putting this all together, we'll now be able to execute the playbook.
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook config-builder.yml
+cisco@onepk:~/nxos-ansible$ ansible-playbook config-builder.yml
 
 PLAY [template building] ****************************************************** 
 
@@ -485,9 +469,9 @@ sjc                        : ok=1    changed=1    unreachable=0    failed=0
 You can verify the config files were created by navigating to the `configs` directory and checing out the new config files.
 
 ```
-cisco@onepk:~/ansible/nxos-ansible$ cd configs
-cisco@onepk:~/ansible/nxos-ansible/configs$ 
-cisco@onepk:~/ansible/nxos-ansible/configs$ cat sjc.cfg 
+cisco@onepk:~/nxos-ansible$ cd configs
+cisco@onepk:~/nxos-ansible/configs$ 
+cisco@onepk:~/nxos-ansible/configs$ cat sjc.cfg 
 
 hostname sjc
 
@@ -499,11 +483,11 @@ snmp-server 192.168.100.12
 
 username cisco password cisco
 
-cisco@onepk:~/ansible/nxos-ansible/configs$ 
+cisco@onepk:~/nxos-ansible/configs$ 
 ```
 
 ```
-cisco@onepk:~/ansible/nxos-ansible/configs$ cat nyc.cfg 
+cisco@onepk:~/nxos-ansible/configs$ cat nyc.cfg 
 
 hostname nyc
 
@@ -638,11 +622,11 @@ Playbook:
     - name: config for all interfaces
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items: {{ leaf_ports }}
-    # note: leaf_ports is a variable defined in /home/cisco/ansible/nxos-ansible/group_vars/leaf.yml  
+    # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml  
 
 ```
 
-Inside: `/home/cisco/ansible/nxos-ansible/group_vars/leaf.yml`
+Inside: `/home/cisco/nxos-ansible/group_vars/leaf.yml`
 
 ```
 ---
@@ -748,7 +732,7 @@ This playbook extracts neighbor information from the device.
 First, the playbook can be run in verbose mode.  This is done by using the `-v` parameter when running the playbook.  Example: `ansible-playbook playbook_name.yml -v`
 
 ```
-cisco@onepk:~/ansible$ ansible-playbook get-neighbors.yml -v
+cisco@onepk:~/nxos-ansible$ ansible-playbook get-neighbors.yml -v
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -797,7 +781,7 @@ Plabyook:
 
 Whent this playbook is run for a single device, it looks like this:
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook get-neighbors.yml
+cisco@onepk:~/nxos-ansible$ ansible-playbook get-neighbors.yml
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -864,7 +848,7 @@ Playbook:
 
 Executing this playbook:
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook get-neighbors.yml
+cisco@onepk:~/nxos-ansible$ ansible-playbook get-neighbors.yml
 
 PLAY [get neighbor data] ****************************************************** 
 
@@ -878,10 +862,10 @@ PLAY RECAP ********************************************************************
 n9k1                       : ok=2    changed=1    unreachable=0    failed=0   
 ```
 
-Looking at the contents of the file created at `/home/cisco/ansible/nxos-ansible/configs/neighbors.json`
+Looking at the contents of the file created at `/home/cisco/nxos-ansible/configs/neighbors.json`
 
 ```
-cisco@onepk:~/ansible/nxos-ansible$ cat configs/neighbors.json 
+cisco@onepk:~/nxos-ansible$ cat configs/neighbors.json 
 
 [
     {
@@ -915,7 +899,7 @@ cisco@onepk:~/ansible/nxos-ansible$ cat configs/neighbors.json
         "platform": "N9K-C9396PX"
     }
 ]
-cisco@onepk:~/ansible/nxos-ansible$ 
+cisco@onepk:~/nxos-ansible$ 
 
 ```
 
@@ -1112,7 +1096,7 @@ For this example, the switch already has VLAN 10 present, but has the name web_s
 Let's see what happens when running the playbook in verbose mode.
 
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml -v
+cisco@onepk:~/nxos-ansible$ ansible-playbook onetest.yml -v
 
 PLAY [testing verbose mode] *************************************************** 
 
@@ -1127,7 +1111,7 @@ name APP_SEGMENT ; exit ;"}, "existing": {"10": {"admin_state": "down",
 PLAY RECAP ******************************************************************** 
 n9k1                       : ok=1    changed=1    unreachable=0    failed=0   
 
-cisco@onepk:~/ansible/nxos-ansible$ 
+cisco@onepk:~/nxos-ansible$ 
 ```
 
 You can see multiple key-value pairs are returned.  They include the commands executed on the switch, but also the existing, new, and proposed values.  These key-value pairs can now be stored in a playbook using the `register` helper module and used as inputs to other tasks or in Jinja2 templates.
@@ -1156,7 +1140,7 @@ Playbook:
 This example has a default config on interface Ethernet1/1 and produces the following output when the playbook is run in check mode.
 
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml --check
+cisco@onepk:~/nxos-ansible$ ansible-playbook onetest.yml --check
 
 PLAY [testing check mode] ***************************************************** 
 
@@ -1170,7 +1154,7 @@ n9k1                       : ok=1    changed=1    unreachable=0    failed=0
 Here you now know there WILL be a change when the playbook is run.  To see these commands, add in the `-v` flag to run in verbose mode as shown here:
 
 ```
-cisco@onepk:~/ansible/nxos-ansible$ ansible-playbook onetest.yml --check -v
+cisco@onepk:~/nxos-ansible$ ansible-playbook onetest.yml --check -v
 
 PLAY [testing check mode] ***************************************************** 
 
