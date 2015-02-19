@@ -3,5 +3,5 @@
 leaf_ports:
   - Ethernet1/1
   - Ethernet1/2
-  - Ethernet2/1
-  - Ethernet2/2
+  - Ethernet1/49
+  - Ethernet1/50
