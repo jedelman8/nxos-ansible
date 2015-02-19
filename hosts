@@ -7,8 +7,8 @@ n9k3
 n9k4
 
 [wan]
-boston
-nyc
+boston  mgmt_ip=10.1.10.1
+nyc  mgmt_ip=10.1.20.1
 sjc
 rtp
 richardson
