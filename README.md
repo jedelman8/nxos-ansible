@@ -167,9 +167,9 @@ cisco@onepk:~$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules
 
 > **Note: If Step 3 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 3 and 4.  Based on how Ansible is installed, this may vary.**
 
-**Step 4: Move the modules into the new directory**
+**Step 4: Move the modules**
 
-**First, Navigate to the new directory**
+**First, navigate to the cloned directory**
 ```
 cisco@onepk:~$ cd nxos-ansible/
 cisco@onepk:~/nxos-ansible$ 
