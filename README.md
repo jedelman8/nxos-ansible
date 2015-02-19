@@ -365,7 +365,7 @@ The other variables found in the Jinja template can be defined in a number of lo
 
 > Note: for more detail about variables and variables scope, please reference the Ansible [variables docs](http://docs.ansible.com/playbooks_variables.html).
 
-First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.  This is a step you must perform if you are following along!
+First, variables can be defined in the hosts file.  You'll need to add the `mgmt_ip` variable for `boston` and `nyc`.
 
 ```
 [spine]
@@ -453,7 +453,7 @@ cisco@onepk:~/nxos-ansible$ ansible-playbook config-builder.yml
 
 PLAY [template building] ****************************************************** 
 
-TASK: [template dest=configs/{{ inventory_hostname }}.cfg src=router.j2] ****** 
+TASK: [template src=templates/routers.j2 dest=configs/{{ inventory_hostname }}.cfg] ****** 
 changed: [sjc]
 changed: [rtp]
 changed: [boston]
@@ -468,7 +468,7 @@ rtp                        : ok=1    changed=1    unreachable=0    failed=0
 sjc                        : ok=1    changed=1    unreachable=0    failed=0 
 ```
 
-You can verify the config files were created by navigating to the `configs` directory and checing out the new config files.
+You can verify the config files were created by navigating to the `configs` directory and checking out the new config files.
 
 ```
 cisco@onepk:~/nxos-ansible$ cd configs
@@ -525,10 +525,12 @@ n9k4
 
 > The examples shown could be deployed in one large playbook, but they are being shown individually below in order to make them more digestable and easier to test.
 
+If you are following along, feel free to name each example whatever you wish.  Remember they must be stored in your working directory and should be executed using `ansible-playbook <playbook_name>`. 
+
 Example 1: Wipe out up logical interfaces and shut down all Ethernet interfaces
 
 > Since we are using `hosts: all` you will need to remove the `wan` group from the hosts file.  Otherwise, just change the groups you are automating!
-
+> Ensure you have connectivity to all Nexus switches within the `hosts` file.  It's fine if you are just using one.
 
 Playbook:
 ```
@@ -567,7 +569,7 @@ Playbook:
 
   tasks:
     - name: ensure VLANs 2-20 and 99 exist on all switches
-      nxos_vlan: vlan_id="2-20" state=present host={{ inventory_hostname }}
+      nxos_vlan: vlan_id="2-20,99" state=present host={{ inventory_hostname }}
 
     - name: config VLANs names for a few VLANs
       nxos_vlan: vlan_id={{ item.vid }} name={{ item.name }} host={{ inventory_hostname }} state=present
@@ -576,10 +578,13 @@ Playbook:
         - { vid: 3, name: app }
         - { vid: 4, name: db }
         - { vid: 20, name: db }
+        - { vid: 99, name: native }
 
 ```
 
 Example 3: Configure Interfaces
+
+This example has two plays.  One being used to automate the `spine` group and another play being used to automate the `leaf` group.  If you don't have two groups in your `hosts` file, be sure to modify this playbook to meet your requirements.
 
 Playbook:
 ```
@@ -623,7 +628,7 @@ Playbook:
   tasks:
     - name: config for all interfaces
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
-      with_items: {{ leaf_ports }}
+      with_items: leaf_ports
     # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml  
 
 ```
