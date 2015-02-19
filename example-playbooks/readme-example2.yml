@@ -1,0 +1,21 @@
+# examples/readme-example2.yml
+---
+
+- name: example 2 - VLANs
+  hosts: all
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+    - name: ensure VLANs 2-20 and 99 exist on all switches
+      nxos_vlan: vlan_id="2-20,99" state=present host={{ inventory_hostname }}
+
+    - name: config VLANs names for a few VLANs
+      nxos_vlan: vlan_id={{ item.vid }} name={{ item.name }} host={{ inventory_hostname }} state=present
+      with_items:
+        - { vid: 2, name: web }
+        - { vid: 3, name: app }
+        - { vid: 4, name: db }
+        - { vid: 20, name: server }
+        - { vid: 99, name: native }

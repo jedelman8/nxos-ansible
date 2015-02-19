@@ -534,6 +534,7 @@ Example 1: Wipe out up logical interfaces and shut down all Ethernet interfaces
 
 Playbook:
 ```
+# example-playbooks/readme-example1.yml
 ---
 
 - name: example 1 - baseline
@@ -559,6 +560,7 @@ Example 2: Deploy VLANs
 
 Playbook:
 ```
+# example-playbooks/readme-example2.yml
 ---
 
 - name: example 2 - VLANs
@@ -577,9 +579,8 @@ Playbook:
         - { vid: 2, name: web }
         - { vid: 3, name: app }
         - { vid: 4, name: db }
-        - { vid: 20, name: db }
+        - { vid: 20, name: server }
         - { vid: 99, name: native }
-
 ```
 
 Example 3: Configure Interfaces
@@ -588,6 +589,7 @@ This example has two plays.  One being used to automate the `spine` group and an
 
 Playbook:
 ```
+# example-playbooks/readme-example3.yml
 ---
 
 - name: example 3 - play 1 - spine interfaces
@@ -598,37 +600,23 @@ Playbook:
 
   tasks:
 
-    - name: ensure ports in scope are default
+    - name: ensure following ports are defaulted
       nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
       with_items:
-        - Ethernet2/1
-        - Ethernet2/2
-        - Ethernet2/3
-        - Ethernet2/4
-        - Ethernet2/7
-        - Ethernet2/8
+        - Ethernet1/1
+        - Ethernet1/2
+        - Ethernet1/3
+        - Ethernet1/4
         - Ethernet2/9
         - Ethernet2/10
         - Ethernet2/11
         - Ethernet2/12
 
-    - name: leaf facing ports
+    - name: vlans for a portchannel
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items:
-        - Ethernet2/1
-        - Ethernet2/2
-
-    - name: ports for vpc peer link
-      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
-      with_items:
-        - Ethernet2/9
-        - Ethernet2/10
-
-    - name: ports for peer keepalive link
-      nxos_switchport: interface={{ item }} mode=trunk trunk_vlans=20 native_vlan=99 host={{ inventory_hostname }}
-      with_items:
-        - Ethernet2/7
-        - Ethernet2/8
+        - Ethernet1/1
+        - Ethernet1/2
 
 - name: example 3 - play 2 - leaf interfaces
   hosts: leaf
@@ -640,14 +628,12 @@ Playbook:
 
     - name: ensure ports in scope in this pb are default interfaces
       nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
-      with_items:
-        - Ethernet1/49
-        - Ethernet1/50
+      with_items: leaf_ports
 
     - name: config for a few interfaces on leafs
       nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
       with_items: leaf_ports
-    # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml  
+    # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml
 
 ```
 
@@ -667,6 +653,7 @@ Example 4: Configure portchannels
 
 Playbook:
 ```
+# example-playbooks/readme-example4.yml
 ---
 
 - name: example 4 - play 1 - spine portchannels
@@ -686,30 +673,6 @@ Playbook:
         state: present
 
 
-    - name: portchannel 11 facing a leaf
-      nxos_portchannel:
-        group: 11
-        members: ['Ethernet1/3','Ethernet1/4']
-        mode: 'active'
-        host: "{{ inventory_hostname }}"
-        state: present
-
-    - name: portchannel 20 for peer link
-      nxos_portchannel:
-        group: 20
-        members: ['Ethernet2/9','Ethernet2/10','Ethernet2/11','Ethernet2/12']
-        mode: 'active'
-        host: "{{ inventory_hostname }}"
-        state: present
-
-    - name: portchannel 21 for peer keepalive link
-      nxos_portchannel:
-        group: 21
-        members: ['Ethernet2/7','Ethernet2/8']
-        mode: 'active'
-        host: "{{ inventory_hostname }}"
-        state: present
-
 - name: example 4 - play 2 - leaf portchannels
   hosts: leaf
   connection: local
@@ -720,7 +683,7 @@ Playbook:
     - name: portchannel 100 facing spine
       nxos_portchannel:
         group: 100
-        members: ['Ethernet1/49','Ethernet1/50']
+        members: ['Ethernet1/1','Ethernet1/2']
         mode: 'active'
         host: "{{ inventory_hostname }}"
         state: present
@@ -734,6 +697,7 @@ Example 5: Get neighbors
 
 Playbook:
 ```
+# example-playbooks/readme-example5.yml
 ---
 
 - name: example 5 - get neighbors
@@ -744,7 +708,10 @@ Playbook:
 
   tasks:
 
-    - name: portchannel 10 facing a leaf
+    # also showing username/password as params
+    # you can remove or insert the correct values
+
+    - name: get neighbors
       nxos_get_neighbors: type=cdp host={{ inventory_hostname }} username=admin password=cisco123
 
 ```
@@ -932,7 +899,7 @@ You also have the flexibility to maniuplate this data and combine it with other 
 
 # Example Playbooks
 
-Several example playbooks have been posted for learning how to use the Cisco Ansible modules.
+In addition to the examples in the previous sections, more examples have been posted for learning how to use the Cisco Ansible modules.
 
 A complete playbook that stands up a leaf/spine network running VPC can also be found in the examples directory.
 

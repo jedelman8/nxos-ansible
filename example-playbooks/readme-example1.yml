@@ -1,0 +1,19 @@
+# examples/readme-example1.yml
+---
+
+- name: example 1 - baseline
+  hosts: all
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+    - name: ensure no logical interfaces exist on the switch
+      nxos_interface: interface={{ item }} state=absent host={{ inventory_hostname }}
+      with_items:
+        - loopback
+        - portchannel
+        - svi
+
+    - name: ensure all Ethernet ports are admin down
+      nxos_interface: interface=Ethernet admin_state=down host={{ inventory_hostname }}

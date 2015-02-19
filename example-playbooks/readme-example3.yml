@@ -1,0 +1,45 @@
+# examples/readme-example3.yml
+---
+
+- name: example 3 - play 1 - spine interfaces
+  hosts: spine
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    - name: ensure following ports are defaulted
+      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet1/2
+        - Ethernet1/3
+        - Ethernet1/4
+        - Ethernet2/9
+        - Ethernet2/10
+        - Ethernet2/11
+        - Ethernet2/12
+
+    - name: vlans for a portchannel
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet1/2
+
+- name: example 3 - play 2 - leaf interfaces
+  hosts: leaf
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    - name: ensure ports in scope in this pb are default interfaces
+      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
+      with_items: leaf_ports
+
+    - name: config for a few interfaces on leafs
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
+      with_items: leaf_ports
+    # note: leaf_ports is a variable defined in /home/cisco/nxos-ansible/group_vars/leaf.yml

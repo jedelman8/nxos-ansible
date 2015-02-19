@@ -1,0 +1,16 @@
+# examples/readme-example5.yml
+---
+
+- name: example 5 - get neighbors
+  hosts: spine
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # also showing username/password as params
+    # you can remove or insert the correct values
+
+    - name: get neighbors
+      nxos_get_neighbors: type=cdp host={{ inventory_hostname }} username=admin password=cisco123
