@@ -1,0 +1,72 @@
+---
+
+- name: leaf configuration
+  hosts: leaf
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    #############################################################
+    # DEFAULT (CLEAN) ALL INTERFACES IN SCOPE FOR THIS DEPLOYMENT
+    #############################################################
+    - name: default all ports in scope
+      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/49
+        - Ethernet1/50
+
+    - name: ensure no logical interfaces exist
+      nxos_interface: interface={{ item }} state=absent host={{ inventory_hostname }}
+      with_items:
+        - loopback
+        - svi
+        - portchannel
+
+    ############################################################
+    #  VLAN CONFIGURATION
+    ############################################################
+    - name: ensure VLANs exist on switches
+      nxos_vlan: vlan_id="2-19,99" state=present host={{ inventory_hostname }}
+
+    - name: ensure names exist for important vlans
+      nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present
+      with_items:
+        - { vlan_id: 10, name: test_segment }
+        - { vlan_id: 99, name: native }
+
+
+    #############################################################
+    # Layer 2 switchport configs
+    #############################################################
+    - name: L2 config for uplinks
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-19 host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/49
+        - Ethernet1/50
+
+    #############################################################
+    # Portchannels
+    #############################################################
+
+
+    - nxos_portchannel:
+        group: 100
+        members: ['Ethernet1/49','Ethernet1/50']
+        mode: active
+        host: "{{ inventory_hostname }}"
+        state: present
+
+
+    #############################################################
+    # Layer 3 Configuration
+    #############################################################
+
+    - name: create logical vlan interfaces
+      nxos_interface: interface={{ item }} host={{ inventory_hostname }}
+      with_items:
+        - vlan10
+
+    - name: assign IP addresses
+      nxos_ipv4_interface: interface=vlan10 ip_addr=10.1.10.10 mask=24 host={{ inventory_hostname }}
