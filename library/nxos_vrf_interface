@@ -10,8 +10,10 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
+    - VRF needs to be added globally with nxos_vrf before
+      adding a VRF to an interface
     - Remove a VRF from an interface will still remove
       all L3 attributes just as it does from CLI
     - VRF is not read from an interface until IP address is

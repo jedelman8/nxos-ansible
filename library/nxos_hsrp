@@ -11,8 +11,11 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
+    - HSRP feature needs to be enabled first on the system
+    - SVIs must exist before using this module
+    - Interface must be a L3 port before using this module
     - Even when md5 is selected, only UNENCRYPTED key strings are supported
       in this release
     - While username and password are not required params, they are

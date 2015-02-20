@@ -11,8 +11,10 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
+    - Interface must be a Layer2 port already.  If not, convert to L2 with
+      nxos_interface module
     - When state=absent, if the switchport does not have a default config,
       it is set back to a default config from a vlan configuration perspective.
       This means, if state=absent, the resulting interface config will be an
@@ -164,7 +166,7 @@ def main():
     if nxapi_lib.interface_is_portchannel(device, interface):
         module.fail_json(msg='Are you trying to config VLAN settings on a '
                          + 'physical interface that is part of a '
-                         + 'port-channel?!?!?!')
+                         + 'port-channel?!?!?! Config port-channel now')
 
     if mode == 'access':
         # Requring the user to configure an access_vlan if configuring an

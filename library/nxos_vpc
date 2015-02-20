@@ -10,8 +10,11 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
+    - The feature vpc must be enabled before this module can be used
+    - If not using management vrf, vrf must be globally on the device
+      before using in the pkl config
     - Although source IP isn't required on the command line it is
       required when using this module.  The PKL VRF must also be configured
       prior to using this module.
@@ -163,14 +166,6 @@ def main():
         ),
         supports_check_mode=True
     )
-    '''
-        pkl_src' - 'source IP address used for peer keepalive link- required
-            when configuring destination
-        pkl_dest' - destination IP address used for peer keepalive link
-        pkl_vrf' - vrf to be used for peer keepalive link
-        delay_restore' - "restore timer that delays VPC coming back up until
-            adj and svi's are up"
-    '''
 
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username

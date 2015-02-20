@@ -3,7 +3,7 @@
 
 ---
 ### Requirements
-* pycsco v0.1.4
+ * pycisco v0.1.4
 * Nexus 9000
 * NX-OS 6.1(2)I3(1)
 * Testing performed on 9396 switches
@@ -117,6 +117,8 @@ Manages Layer 2 switchport interfaces
 ```
 
 #### Notes
+- Interface must be a Layer2 port already.  If not, convert to L2 with nxos_interface module
+
 - When state=absent, if the switchport does not have a default config, it is set back to a default config from a vlan configuration perspective. This means, if state=absent, the resulting interface config will be an access port with vlan 1 configured as an access vlan even if the existing config is a trunk port.
 
 - Access and Native VLANs are required to exist on the switch before configuring them with this module
@@ -162,6 +164,8 @@ Manages interface specific VRF configuration
 ```
 
 #### Notes
+- VRF needs to be added globally with nxos_vrf before adding a VRF to an interface
+
 - Remove a VRF from an interface will still remove all L3 attributes just as it does from CLI
 
 - VRF is not read from an interface until IP address is configured on that interface
@@ -260,6 +264,8 @@ Manages interface VPC configuration
 - Either vpc or peer_link param is required, but not both.
 
 - State=absent removes whatever VPC config is on a port-channel if one exists.
+
+- Re-assigning a vpc or peerlink from one portchannel to another is not supported.  The module will force the user to unconfigure an existing vpc/pl before configuring the same value on a new portchannel
 
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
@@ -435,7 +441,9 @@ Manages UDLD global configuration params
 ```
 
 #### Notes
-- When state=absent, it unconfigures existing setings if they already exist on the switch.  It is cleaner to use state=present.
+- When state=absent, it unconfigures existing setings if they already exist on the switch.  It is cleaner to always use state=present.
+
+- Module will fail if the udld feature has not been previously enabled
 
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
@@ -536,6 +544,10 @@ Manages L3 attributes for IPv4 interfaces
 ```
 
 #### Notes
+- Interface must already be a L3 port when using this module.  Use nxos_interface to convert an interface from L2 to L3, if needed.
+
+- Logical interfaces (po, loop, svi) must be created first with the nxos_interface module prior to configuring the ipv4 address
+
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
 - Using the username and password params will override the .netauth file
@@ -587,6 +599,10 @@ Manages global VPC configuration
 ```
 
 #### Notes
+- The feature vpc must be enabled before this module can be used
+
+- If not using management vrf, vrf must be globally on the device before using in the pkl config
+
 - Although source IP isn't required on the command line it is required when using this module.  The PKL VRF must also be configured prior to using this module.
 
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
@@ -641,6 +657,8 @@ Copy file from remote server to Nexus switch
 
 #### Notes
 - This module was tested with a remote Ubuntu 14.04 machine using SCP.
+
+- Cannot override files on the switch with this module.  User should ensure the file does not exist first with nxos_dir if needed or change the name of the dest file name.
 
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
@@ -818,6 +836,10 @@ Manages port-channel interfaces
 #### Notes
 - Absent removes the portchannel config and interface if it already exists
 
+- Members must be a list
+
+- LACP needs to be enabled first if active/passive modes are used
+
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
 - Using the username and password params will override the .netauth file
@@ -870,6 +892,8 @@ Send raw commands to Cisco NX-API enabled devices
 #### Notes
 - Only a single show command can be sent per task while multiple config commands can be sent.
 
+- Single show command or list of config commands or series of config commands separated by a comma supported
+
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.
 
 - Using the username and password params will override the .netauth file
@@ -920,6 +944,12 @@ Manages HSRP configuration on NX-API enabled devices
 ```
 
 #### Notes
+- HSRP feature needs to be enabled first on the system
+
+- SVIs must exist before using this module
+
+- Interface must be a L3 port before using this module
+
 - Even when md5 is selected, only UNENCRYPTED key strings are supported in this release
 
 - While username and password are not required params, they are if you are not using the .netauth file.  .netauth file is recommended as it will clean up the each task in the playbook by not requiring the username and password params for every tasks.

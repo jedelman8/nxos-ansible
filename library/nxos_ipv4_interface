@@ -11,8 +11,12 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
+    - Interface must already be a L3 port when using this module.  Use
+      nxos_interface to convert an interface from L2 to L3, if needed.
+    - Logical interfaces (po, loop, svi) must be created first with the
+      nxos_interface module prior to configuring the ipv4 address
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
       as it will clean up the each task in the playbook by not requiring

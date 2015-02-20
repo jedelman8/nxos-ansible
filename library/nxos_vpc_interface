@@ -10,11 +10,14 @@ author: Cisco Systems Inc.
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.3
+    - pycsco v0.1.4
 notes:
     - Either vpc or peer_link param is required, but not both.
     - State=absent removes whatever VPC config is on a port-channel
       if one exists.
+    - Re-assigning a vpc or peerlink from one portchannel to another is not
+      supported.  The module will force the user to unconfigure an existing
+      vpc/pl before configuring the same value on a new portchannel
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
       as it will clean up the each task in the playbook by not requiring
