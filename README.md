@@ -234,21 +234,29 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 
   tasks:
 
+    - name: default interfaces
+      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet2/1
+
     # Ensure an interface is a Layer 3 port and that it has the proper description
-    - nxos_interface: interface=Ethernet1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
+    - name: config interface
+      nxos_interface: interface=Ethernet1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
 
     # Admin down an interface
     - nxos_interface: interface=Ethernet2/1 admin_state=down host={{ inventory_hostname }}
+
 ```
 
 
 As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
 
-Just below those four k-v pairs, there is a list of two tasks that will be automated.  The first and second tasks both call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
+Just below those four k-v pairs, there is a list of three tasks that will be automated.  They all call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
 > Note: Nearly all Cisco modules are idempotent, which means, if the device is already in the desired state, no change will be made.  A change will only be made if it's required to get the device into the desired state.  
 
-As you can probably tell, the first task will ensure Ethernet1/1 has the description defined in the k-v pair and also ensure that Ethernet1/1 is a layer 3 port.  The second task ensures that Ethernet2/1 is in the admin down state.  As stated previously, these modules are idempotent, so if Ethernet2/1 is already in the admin down state, no commands will be sent to the device (as an example).
+As you can probably tell, the first task will default Eth1/1 and Eth2/1, the second tasks will ensure Ethernet1/1 has the description defined in the k-v pair and also ensure that Ethernet1/1 is a layer 3 port.  The third task ensures that Ethernet2/1 is in the admin down state.  As stated previously, these modules are idempotent, so if Ethernet2/1 is already in the admin down state, no commands will be sent to the device (as an example).
 
 ### Hosts File
 
