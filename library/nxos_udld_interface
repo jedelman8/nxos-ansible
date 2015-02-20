@@ -10,7 +10,7 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.4
+    - pycsco v0.1.5
 notes:
     - When state=absent, it unconfigures existing setings if
       they already exist on the switch.  It is much cleaner to use
@@ -24,14 +24,14 @@ options:
     mode:
         description:
             - Manages udld mode for an interface
-        required: false
+        required: true
         default: null
         choices: ['enabled','disabled','aggressive']
         aliases: []
     interface:
         description:
             - FULL name of the interface, i.e. Ethernet1/1
-        required: false
+        required: true
         default: null
         choices: []
         aliases: []

@@ -11,7 +11,7 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.4
+    - pycsco v0.1.5
 notes:
     - Absent removes the portchannel config and interface if it
       already exists
