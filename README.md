@@ -144,7 +144,7 @@ In order to begin automating Cisco Nexus switches with Ansible, a few dependenci
 
 All of these dependencies can be installed by issuing the following command:
 ```
-sudo pip install pycsco
+cisco@onepk:~$ sudo pip install pycsco
 ```
 
 ### Cisco NX-OS Ansible Modules
@@ -162,31 +162,27 @@ cisco@onepk:~$ sudo apt-get install git
 cisco@onepk:~$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
 
-**Step 3: Move the contents of the library directory**
-
-Note: this is being done to ensure the `ansible-doc` utility works for these modules.  This utility is covered below.  Another option is to update the path for `ansible-doc`, but to ensure you do not have to consistently add new paths or use the same working directory, this is the better option.
-
-**Create a new directory for the modules**
+**Step 3: Create Two New Directories**
 
 ```
-cisco@onepk:~$ sudo mkdir /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
+cisco@onepk:~$ sudo mkdir -p /etc/ansible
+
+cisco@onepk:~$ sudo mkdir -p /usr/share/ansible
 ```
 
-> **Note: If Step 3 fails, use the dir `/usr/share/ansible/cisco_nxos` instead for Step 3 and 4.  Based on how Ansible is installed, this may vary.**
 
-**Step 4: Move the modules**
+**Step 4: Move  Modules and Config to New Directories**
 
-**First, navigate to the cloned directory**
 ```
-cisco@onepk:~$ cd nxos-ansible/
-cisco@onepk:~/nxos-ansible$ 
-```
+cisco@onepk:~$ cd nxos-ansible
 
-**Then finally move the modules**
-```
-cisco@onepk:~/ansible$ sudo mv library/nxos_* /usr/local/lib/python2.7/dist-packages/ansible/modules/extras/network/cisco_nxos
+cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/ansible.cfg /etc/ansible/ansible.cfg
+
+cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/library /usr/share/ansible/cisco_nxos
 ```
 
+
+> Note: these steps are being done for two reasons.  First, to ensure users can create multiple working directories such they don't always need a `library` directory local to their playbooks.  Second, to ensure the `ansible-doc` utility works for the Cisco modules.  This utility is covered below, but in short, it provides built-in docs for Ansible modules.
 
 ### Cisco Nexus Switches
 At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
