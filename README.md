@@ -976,13 +976,22 @@ Please contribute! Feel free to open issues or pull requests pertaining to the d
 sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
 ```
 
-Once the image is up and running, you'll need to do two things.
+Once the image is up and running, you'll need to do two three things.
 
 **Step 1**
 Update the `/etc/hosts` file to include your Nexus switches.  Map a name to the mgmt0 IP address of one or more switches. More details can be found above in Step 5 of the [Ansible Control](#ansible-control-host) host section.
 
 **Step 2**
 Update the Ansible `hosts` file in the `nxos-ansible` directory.  You'll want to use the names you added to your `/etc/hosts` file and then finally update the `hosts:` for each playbook you want to run.  This is stated further above in more detail too.
+
+**Step 3**
+Update the `.netauth` file with your credentials.  If you choose not to, you can use the username/password params for every task (also discussed above).
+
+Just replace cisco/cisco with your username/password.
+
+```
+sudo vim ~/.netauth
+```
 
 Continue following along starting back at [Cisco Nexus Switches](#cisco-nexus-switches).
 
