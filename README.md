@@ -109,34 +109,8 @@ To make the change to the hosts file as shown above, any number of text editors 
 
 You should now be able to `ping n9k1` to get a response back from the MANAGEMENT IP address of the Nexus switch.  In our case, that is 172.31.217.133.
 
-**Step 6 - Create An Authentication File**
 
-This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
-
-Create a new file called `.netauth` in your HOME directory as shown below.
-
-```
-cisco@onepk:~$ touch .netauth
-```
-
-Make changes using a text editor such that it follows the format below.  Your file MUST look like the one below (*just insert the username and password for your switches*).  Don't forget the `---` at the top of the file.  If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
-
-> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file outside of your working directory.
-> 
-> Note: this section will be updated over time to include instructions for using `ansible-vault`.
-
-```
-cisco@onepk:~$ cat .netauth 
----
-
-cisco:
-  nexus:
-    username: "cisco"
-    password: "cisco"
-
-```
-
-**Step 7 - ONLY FOR VAGRANT USERS**
+**Step 6 - ONLY FOR VAGRANT USERS**
 
 If you are using an Ubuntu box with Vagrant, also perform the following command:
 ```
@@ -183,13 +157,48 @@ cisco@onepk:~$ sudo mkdir -p /usr/share/ansible
 ```
 cisco@onepk:~$ cd nxos-ansible
 
-cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/ansible.cfg /etc/ansible/ansible.cfg
+cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/files/ansible.cfg /etc/ansible/ansible.cfg
 
 cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/library /usr/share/ansible/cisco_nxos
 ```
 
 
 > Note: these steps are being done for two reasons.  First, to ensure users can create multiple working directories such they don't always need a `library` directory local to their playbooks.  Second, to ensure the `ansible-doc` utility works for the Cisco modules.  This utility is covered below, but in short, it provides built-in docs for Ansible modules.
+
+**Step 5 - Move and Edit the Authentication File**
+
+This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
+
+```
+cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/files/.netauth ~/.netauth
+```
+
+**Edit the file**
+```
+cisco@onepk:~/nxos-ansible$ cd 
+
+cisco@onepk:~$ sudo vim .netauth
+```
+
+Make changes using a text editor (example above is using vim) such that it follows the format below.  Your file MUST look like the one below (*just insert the username and password for your switches*).
+
+If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook for each task.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
+
+> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file outside of your working directory.
+> 
+> Note: this section will be updated over time to include instructions for using `ansible-vault`.
+
+```
+# sample .netauth
+# make sure you input the proper creds for your device
+---
+
+cisco:
+  nexus:
+    username: "cisco"
+    password: "cisco"
+
+```
 
 ### Cisco Nexus Switches
 At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
