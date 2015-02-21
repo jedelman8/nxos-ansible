@@ -11,7 +11,7 @@ author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.5
+    - pycsco
 notes:
     - Equivalent to using 'show interface $INTERFACEX/Y'
     - While username and password are not required params, they are

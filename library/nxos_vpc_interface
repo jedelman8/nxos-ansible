@@ -10,7 +10,7 @@ author: Cisco Systems Inc.
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
-    - pycsco v0.1.5
+    - pycsco
 notes:
     - Either vpc or peer_link param is required, but not both.
     - State=absent removes whatever VPC config is on a port-channel
