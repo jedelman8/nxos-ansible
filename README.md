@@ -28,6 +28,7 @@ Want to go an overview of the modules right away?  Check out the docs [here](doc
   * [Example Playbooks](#example-playbooks)
   * [Cisco NX-OS Module Docs](#cisco-nx-os-module-docs)
   * [Contributions](#contributions)
+  * [Docker Install](#docker-install)
   * [Appendix - Features to Know](#appendix---features-to-know)
     * [ansible-doc](#ansible-doc)
     * [Verbose Output](#verbose-output)
@@ -55,6 +56,8 @@ For more detail on NX-API, check the offical [docs](http://www.cisco.com/c/en/us
 The rest of this document will be used to describe and show how to automate Cisco Nexus environments using the Ansible open source IT automation framework.  It will cover high level installation procedures and examples of how to get started.
 
 Before going through examples, we'll first walk through getting a basic Ansible environment setup that will specifically be used to automate Cisco data center networks that have NX-OS switches deployed.
+
+If you happen to be a Docker user, you can get started fairly quick using this docker image.  Follw these [steps](#docker-install).
 
 * [Ansible Control Host](#ansible-control-host)
 * [Cisco Dependencies](#cisco-dependencies)
@@ -966,6 +969,22 @@ Overview of each module in traditional Ansible style tables format.
 # Contributions
 
 Please contribute! Feel free to open issues or pull requests pertaining to the documentation, code, and playbooks, If you have good use cases, feel free to add them to the repo too.
+
+# Docker Install
+
+```
+sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
+```
+
+Once the image is up and running, you'll need to do two things.
+
+**Step 1**
+Update the `/etc/hosts` file to include your Nexus switches.  Map a name to the mgmt0 IP address of one or more switches. More details can be found above in Step 5 of the [Ansible Control](#ansible-control-host) host section.
+
+**Step 2**
+Update the Ansible `hosts` file in the `nxos-ansible` directory.  You'll want to use the names you added to your `/etc/hosts` file and then finally update the `hosts:` for each playbook you want to run.  This is stated further above in more detail too.
+
+Continue following along starting back at [Cisco Nexus Switches](#cisco-nexus-switches).
 
 # Appendix - Features to Know
 
