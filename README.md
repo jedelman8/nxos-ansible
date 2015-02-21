@@ -1,6 +1,8 @@
 Network Automation with Ansible and Cisco Nexus Switches
 ========================
 
+Want to go an overview of the modules right away?  Check out the docs [here](docs/nexus-module-docs.md)
+
 ## Table of Contents
   
   * [Introduction](#introduction)
@@ -25,6 +27,7 @@ Network Automation with Ansible and Cisco Nexus Switches
   * [Automated Data Collection](#automated-data-collection)
   * [Example Playbooks](#example-playbooks)
   * [Cisco NX-OS Module Docs](#cisco-nx-os-module-docs)
+  * [Contributions](#contributions)
   * [Appendix - Features to Know](#appendix---features-to-know)
     * [ansible-doc](#ansible-doc)
     * [Verbose Output](#verbose-output)
@@ -117,6 +120,10 @@ cisco@onepk:~$ touch .netauth
 ```
 
 Make changes using a text editor such that it follows the format below.  Your file MUST look like the one below (*just insert the username and password for your switches*).  Don't forget the `---` at the top of the file.  If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
+
+> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file outside of your working directory.
+> 
+> Note: this section will be updated over time to include instructions for using `ansible-vault`.
 
 ```
 cisco@onepk:~$ cat .netauth 
@@ -946,6 +953,10 @@ Feel free to contribute your example playbooks too.
 Overview of each module in traditional Ansible style tables format.
 
 [See here](docs/nexus-module-docs.md)
+
+# Contributions
+
+Please contribute! Feel free to open issues or pull requests pertaining to the documentation, code, and playbooks, If you have good use cases, feel free to add them to the repo too.
 
 # Appendix - Features to Know
 
