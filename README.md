@@ -9,10 +9,9 @@ Want to go an overview of the modules right away?  Check out the docs [here](doc
   * [What is Ansible?](#what-is-ansible)
   * [What is Nexus NX-API?](#what-is-nexus-nx-api)
   * [Environment Setup](#environment-setup)
-    * [Ansible Control Host](#ansible-control-host)
-    * [Cisco Dependencies](#cisco-dependencies)
-    * [Cisco NX-OS Ansible Modules](#cisco-nx-os-ansible-modules)
-    * [Cisco Nexus Switches](#cisco-nexus-switches)
+    * [Option 1 - Manual Install](#option-1-manual-install)
+    * [Option 2 - Get Your Docker On](#option-2-get-your-docker-on)
+  * [Prepare Your Cisco Nexus Switches](#prepare-your-cisco-nexus-switches)
   * [Getting Familiar with Ansible](#getting-familiar-with-ansible)
     * [Example Playbook](#example-playbook)
     * [Hosts File](#hosts-file)
@@ -57,12 +56,14 @@ The rest of this document will be used to describe and show how to automate Cisc
 
 Before going through examples, we'll first walk through getting a basic Ansible environment setup that will specifically be used to automate Cisco data center networks that have NX-OS switches deployed.
 
-If you happen to be a Docker user, you can get started fairly quick using this docker image.  Follw these [steps](#docker-install).
+* [Option 1 - Manual Install](#option-1-manual-install)
+* [Option 2 - Get Your Docker On](#get-your-docker-on)
+
+## Option 1 - Manual Install
 
 * [Ansible Control Host](#ansible-control-host)
 * [Cisco Dependencies](#cisco-dependencies)
 * [Cisco NX-OS Ansible Modules](#cisco-nx-os-ansible-modules)
-* [Cisco Nexus Switches](#cisco-nexus-switches)
 
 ### Ansible Control Host
 Ansible does not require a dedicated server to be used.  In fact, many machines could have Ansible installed and they can be used to simultaneuously automate any given environment (not recommending that here, but it's definitely a nice option to have). 
@@ -192,7 +193,7 @@ If the username and password differs for a switch or group of switches, you must
 > Note: this section will be updated over time to include instructions for using `ansible-vault`.
 
 ```
-# sample .netauth
+# the .netauth file
 # make sure you input the proper creds for your device
 ---
 
@@ -203,7 +204,76 @@ cisco:
 
 ```
 
-### Cisco Nexus Switches
+
+## Option 2 - Get Your Docker On
+
+* [Download Docker Image](#download-docker-image)
+* [Update hosts File](#update-hosts-file)
+* [Update Authentication File](#update-authentication-file)
+
+### Download Docker Image
+Ansible does not require a dedicated server to be used.  In fact, many machines could have Ansible installed and they can be used to simultaneuously automate any given environment (not recommending that here, but it's definitely a nice option to have). 
+
+> Note: This option assumes you already have Docker installed.  If you don't, follow the simple instructions that can be followed [here](https://docs.docker.com/installation/).
+
+The Docker image will come ready to go with Ansible along with the Cisco dependencies required to start automating Nexus environments.
+
+```
+sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
+```
+
+
+### Update hosts File
+
+Ensure you can ping your Nexus NX-API enabled switches by name (not required, but helpful) from the new container.  Here is a sample from a test container.  This shows the file after adding two new entries for `n9k1` and `n9k2`.
+
+```
+root@3b5d22fa1231b:~$ cat /etc/hosts
+172.17.0.23      3b5d22fa1231b
+127.0.0.1        localhost
+
+#### Add your Nexus Switches here
+#### MUST Use the MGMT0 IP Address
+
+10.1.10.100      n9k1
+10.1.10.101      n9k2
+
+```
+
+`vim` is already installed in the container, so feel free to use it to modify the `hosts` file.
+
+You should now be able to `ping n9k1` to get a response back from the MANAGEMENT IP address of the Nexus switch.
+
+
+### Update Authentication File
+
+This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
+
+**Edit the auth file**
+```
+root@3b5d22fa1231b:~$ sudo vim ~/.netauth
+
+```
+
+```
+# the .netauth file
+# make sure you input the proper creds for your device
+---
+
+cisco:
+  nexus:
+    username: "cisco"
+    password: "cisco"
+
+```
+
+Update the file so it incluces your proper credentials.  Save and Exit.
+
+If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook for each task.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
+
+> Note: this section will be updated over time to include instructions for using `ansible-vault`.
+
+# Prepare Your Cisco Nexus Switches
 At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
 
 The `feature` command is used to enable NX-API.  After it's enabled, ensure the device is listening on port 80.  The modules in this repo only operate using http/80.  Https/443 to come in the future.
@@ -265,7 +335,9 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 ```
 
 
-As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
+As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  
+
+**If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!**  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
 
 Just below those four k-v pairs, there is a list of three tasks that will be automated.  They all call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
@@ -969,31 +1041,6 @@ Overview of each module in traditional Ansible style tables format.
 # Contributions
 
 Please contribute! Feel free to open issues or pull requests pertaining to the documentation, code, and playbooks, If you have good use cases, feel free to add them to the repo too.
-
-# Docker Install
-
-```
-sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
-```
-
-Once the image is up and running, you'll need to do two three things.
-
-**Step 1**
-Update the `/etc/hosts` file to include your Nexus switches.  Map a name to the mgmt0 IP address of one or more switches. More details can be found above in Step 5 of the [Ansible Control](#ansible-control-host) host section.
-
-**Step 2**
-Update the Ansible `hosts` file in the `nxos-ansible` directory.  You'll want to use the names you added to your `/etc/hosts` file and then finally update the `hosts:` for each playbook you want to run.  This is stated further above in more detail too.
-
-**Step 3**
-Update the `.netauth` file with your credentials.  If you choose not to, you can use the username/password params for every task (also discussed above).
-
-Just replace cisco/cisco with your username/password.
-
-```
-sudo vim ~/.netauth
-```
-
-Continue following along starting back at [Cisco Nexus Switches](#cisco-nexus-switches).
 
 # Appendix - Features to Know
 
