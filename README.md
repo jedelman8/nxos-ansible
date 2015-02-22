@@ -27,7 +27,7 @@ Want to go an overview of the modules right away?  Check out the docs [here](doc
   * [Example Playbooks](#example-playbooks)
   * [Cisco NX-OS Module Docs](#cisco-nx-os-module-docs)
   * [Contributions](#contributions)
-  * [Docker Install](#docker-install)
+  * [License](#license)
   * [Appendix - Features to Know](#appendix---features-to-know)
     * [ansible-doc](#ansible-doc)
     * [Verbose Output](#verbose-output)
@@ -1030,7 +1030,7 @@ In addition to the examples in the previous sections, more examples have been po
 
 Feel free to contribute your example playbooks too.
 
-[See here](examples/)
+[See here](example-playbooks/)
 
 #  Cisco NX-OS Module Docs
 
@@ -1041,6 +1041,11 @@ Overview of each module in traditional Ansible style tables format.
 # Contributions
 
 Please contribute! Feel free to open issues or pull requests pertaining to the documentation, code, and playbooks, If you have good use cases, feel free to add them to the repo too.
+
+
+# License
+
+See [here](#license)
 
 # Appendix - Features to Know
 
