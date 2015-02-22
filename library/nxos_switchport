@@ -177,11 +177,6 @@ def main():
 
     interface = interface.lower()
 
-    if nxapi_lib.interface_is_portchannel(device, interface):
-        module.fail_json(msg='Are you trying to config VLAN settings on a '
-                         + 'physical interface that is part of a '
-                         + 'port-channel?!?!?! Config port-channel now')
-
     if mode == 'access':
         # Requring the user to configure an access_vlan if configuring an
         # access port
@@ -274,6 +269,10 @@ def main():
         delta = set(proposed.iteritems()).difference(existing.iteritems())
         if existing:
             if delta:
+                if nxapi_lib.interface_is_portchannel(device, interface):
+                    module.fail_json(msg='Cannot change L2 config on physical '
+                                     + 'port because it is in a portchannel. '
+                                     + 'You should update portchannel config.')
                 command = nxapi_lib.get_switchport_config_commands(device,
                                                                    delta,
                                                                    interface)
