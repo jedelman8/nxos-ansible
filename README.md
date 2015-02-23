@@ -9,8 +9,8 @@ Network Automation with Ansible and Cisco Nexus Switches
   * [What is Ansible?](#what-is-ansible)
   * [What is Nexus NX-API?](#what-is-nexus-nx-api)
   * [Environment Setup](#environment-setup)
-    * [Option 1 - Manual Install](#option-1-manual-install)
-    * [Option 2 - Get Your Docker On](#option-2-get-your-docker-on)
+    * [Option 1 - Manual Install](#option-1---manual-install)
+    * [Option 2 - Get Your Docker On](#option-2---get-your-docker-on)
   * [Prepare Your Cisco Nexus Switches](#prepare-your-cisco-nexus-switches)
   * [Getting Familiar with Ansible](#getting-familiar-with-ansible)
     * [Example Playbook](#example-playbook)
@@ -56,8 +56,8 @@ The rest of this document will be used to describe and show how to automate Cisc
 
 Before going through examples, we'll first walk through getting a basic Ansible environment setup that will specifically be used to automate Cisco data center networks that have NX-OS switches deployed.
 
-* [Option 1 - Manual Install](#option-1-manual-install)
-* [Option 2 - Get Your Docker On](#get-your-docker-on)
+* [Option 1 - Manual Install](#option-1---manual-install)
+* [Option 2 - Get Your Docker On](#option-2---get-your-docker-on)
 
 ## Option 1 - Manual Install
 
