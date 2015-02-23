@@ -14,41 +14,26 @@
 #############################################################
 # Layer 2 Switchport Configs
 #############################################################
-#- name: L2 config for all ports except peer keepalive
-#  nxos_switchport: interface={{ item }} mode=trunk native_vlan={{ native }} trunk_vlans={{ trunk_vlans }} host={{ inventory_hostname }}
-#  with_items: default_trunk_interfaces
+- name: L2 config for all ports except peer keepalive
+  nxos_switchport: interface={{ item }} mode=trunk native_vlan={{ native }} trunk_vlans={{ trunk_vlans }} host={{ inventory_hostname }}
+  with_items: default_trunk_interfaces
 
-#- name: L2 config for peer keepalive link
-#  nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=20 host={{ inventory_hostname }}
-#  with_items: pkl_interfaces
+- name: L2 config for peer keepalive link
+  nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=20 host={{ inventory_hostname }}
+  with_items: pkl_interfaces
 
 
 #############################################################
 # Portchannels
 #############################################################
-- name: portchannel for vpc peer link
-  nxos_portchannel:
-    group: 10
-    members: ['Ethernet1/1','Ethernet1/2']
-    mode: active
-    host: "{{ inventory_hostname }}"
-    state: present
 
-- name: portchannel for single leaf
+- name: configure portchannels
   nxos_portchannel:
-    group: 11
-    members: ['Ethernet2/1']
-    mode: active
+    group: "{{ item.key }}"
+    members: "{{ item.value.members }}"
+    mode: "{{ item.value.mode }}"
     host: "{{ inventory_hostname }}"
-    state: present
-
-- name: portchannel for peer keepalive link
-  nxos_portchannel:
-    group: 12
-    members: ['Ethernet2/12']
-    mode: active
-    host: "{{ inventory_hostname }}"
-    state: present
+  with_dict: portchannels
 
 
 #############################################################

@@ -1,7 +1,8 @@
 ---
 # This Playbook stands up dual-core and a single leaf
-# It assigns an IP to an SVI on the leaf to be used for testing connectivity without any hosts
-# Add more host_vars files (port channels in the leaf/tasks) to scale out
+# It assigns an IP to an SVI on the leaf to be used for
+# testing connectivity without any hosts
+# Add more host_vars files to scale out
 
 
 - hosts: spine
