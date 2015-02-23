@@ -1,0 +1,15 @@
+
+vlans: "2-19,99"
+
+named_leaf_vlans:
+  - { vlan_id: 10, name: test_segment }
+  - { vlan_id: 99, name: native }
+
+uplink_interfaces:
+  - Ethernet1/49
+  - Ethernet1/50
+
+logical_interfaces_to_create:
+  - vlan10
+
+

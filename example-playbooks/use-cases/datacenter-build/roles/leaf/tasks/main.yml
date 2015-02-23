@@ -1,0 +1,41 @@
+
+############################################################
+#  VLAN CONFIGURATION
+############################################################
+- name: ensure VLANs exist on switches
+  nxos_vlan: vlan_id={{ vlans }} state=present host={{ inventory_hostname }}
+
+- name: ensure names exist for important vlans
+  nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present
+  with_items: named_leaf_vlans
+
+
+#############################################################
+# Layer 2 switchport configs
+#############################################################
+- name: L2 config for uplinks
+  nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-19 host={{ inventory_hostname }}
+  with_items: uplink_interfaces
+
+#############################################################
+# Portchannels
+#############################################################
+- name: portchannel for uplinks
+  nxos_portchannel:
+    group: 100
+    members: "{{ uplink_interfaces }}"
+    mode: active
+    host: "{{ inventory_hostname }}"
+    state: present
+
+#############################################################
+# Layer 3 Configuration
+#############################################################
+
+- name: create logical vlan interfaces
+  nxos_interface: interface={{ item }} host={{ inventory_hostname }}
+  with_items: logical_interfaces_to_create
+
+- name: assign IP addresses
+  nxos_ipv4_interface: interface={{ item.interface }} ip_addr={{ item.ip }} mask={{ item.mask }} host={{ inventory_hostname }}
+  with_items: layer3ip

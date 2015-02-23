@@ -1,0 +1,19 @@
+---
+# This Playbook stands up dual-core and a single leaf
+# It assigns an IP to an SVI on the leaf to be used for testing connectivity without any hosts
+# Add more host_vars files (port channels in the leaf/tasks) to scale out
+
+
+- hosts: spine
+  roles:
+    - role: spine
+
+- hosts: leaf
+  roles:
+    - role: leaf
+
+- hosts: all
+  tasks:
+    - name: save config
+      nxos_save_config: host={{ inventory_hostname }}
+

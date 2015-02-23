@@ -1,0 +1,5 @@
+---
+
+layer3ip:
+  - { interface: vlan10, ip: 10.1.10.10, mask: 24 }
+

@@ -1,0 +1,101 @@
+---
+
+############################################################
+#  VLAN CONFIGURATION
+############################################################
+- name: ensure VLANs exist on switches
+  nxos_vlan: vlan_id={{ vlans }} state=present host={{ inventory_hostname }}
+
+- name: ensure names exist for important vlans
+  nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present
+  with_items: named_spine_vlans
+
+
+#############################################################
+# Layer 2 Switchport Configs
+#############################################################
+#- name: L2 config for all ports except peer keepalive
+#  nxos_switchport: interface={{ item }} mode=trunk native_vlan={{ native }} trunk_vlans={{ trunk_vlans }} host={{ inventory_hostname }}
+#  with_items: default_trunk_interfaces
+
+#- name: L2 config for peer keepalive link
+#  nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=20 host={{ inventory_hostname }}
+#  with_items: pkl_interfaces
+
+
+#############################################################
+# Portchannels
+#############################################################
+- name: portchannel for vpc peer link
+  nxos_portchannel:
+    group: 10
+    members: ['Ethernet1/1','Ethernet1/2']
+    mode: active
+    host: "{{ inventory_hostname }}"
+    state: present
+
+- name: portchannel for single leaf
+  nxos_portchannel:
+    group: 11
+    members: ['Ethernet2/1']
+    mode: active
+    host: "{{ inventory_hostname }}"
+    state: present
+
+- name: portchannel for peer keepalive link
+  nxos_portchannel:
+    group: 12
+    members: ['Ethernet2/12']
+    mode: active
+    host: "{{ inventory_hostname }}"
+    state: present
+
+
+#############################################################
+# Layer 3 Configuration
+#############################################################
+
+- name: create logical interfaces
+  nxos_interface: interface={{ item }} host={{ inventory_hostname }}
+  with_items: logical_interfaces_to_create
+
+- name: ensure VRF are created
+  nxos_vrf: vrf={{ item }} host={{ inventory_hostname }}
+  with_items: vrfs
+
+- name: assgn VRF to peer keepalive link interfaces
+  nxos_vrf_interface: interface={{ pkl_link.interface }} vrf={{ pkl_link.vrf }} host={{ inventory_hostname }}
+
+- name: assign IP addresses
+  nxos_ipv4_interface: interface={{ item.interface }} ip_addr={{ item.ip }} mask={{ item.mask }} host={{ inventory_hostname }}
+  with_items: layer3ip
+
+- name: config HSRP
+  nxos_hsrp: group={{ item.group }} interface={{ item.interface }} vip={{ item.vip }} priority={{ hsrp_priority }} host={{ inventory_hostname }}
+  with_items: hsrp
+
+#############################################################
+# Global VPC Configuration
+#############################################################
+
+- name: global vpc configuration params
+  nxos_vpc:
+    domain={{ item.value.domain }}
+    system_priority={{ item.value.systempri }}
+    role_priority={{ item.value.rolepri }}
+    pkl_src={{ item.value.pkl.src }}
+    pkl_dest={{ item.value.pkl.dest }}
+    pkl_vrf={{ item.value.pkl.vrf }}
+    host={{ inventory_hostname }}
+  with_dict: vpc
+
+
+#############################################################
+# Portchannel VPC Configuration
+#############################################################
+
+- name: portchannel vpc peer link configuration
+  nxos_vpc_interface:  portchannel=10 peer_link=true host={{ inventory_hostname }}
+
+- name: portchannel vpc  configuration
+  nxos_vpc_interface:  portchannel=11 vpc=11 host={{ inventory_hostname }}
