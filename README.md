@@ -168,6 +168,8 @@ cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/library /usr/share/ansible/cisc
 
 
 > Note: these steps are being done for two reasons.  First, to ensure users can create multiple working directories such they don't always need a `library` directory local to their playbooks.  Second, to ensure the `ansible-doc` utility works for the Cisco modules.  This utility is covered below, but in short, it provides built-in docs for Ansible modules.
+> 
+> Note: the only change in the ansible.cfg file from the default is the setting of the flag `gathering = explicit`.  If you do not have this, you'll need to set `gather_facts: False` for each play.
 
 **Step 5 - Move and Edit the Authentication File**
 
@@ -314,8 +316,6 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 
 - name: sample playbook
   hosts: n9k1
-  connection: local
-  gather_facts: no
 
   tasks:
 
@@ -351,11 +351,15 @@ For each play, the administrator needs to define the host(s) that the set of tas
 
 The inventory hosts file is an ini based file.  The hosts file for the above example looks like this:
 ```
+[all:vars]
+ansible_connection = local
+
 [spine]
 n9k1
 n9k2
 
 [leaf]
+n3k1
 n9k3
 n9k4
 
@@ -368,7 +372,9 @@ richardson
 
 ```
 
-Feel free to take a look at the `hosts` file.  Since you cloned the repo, just make sure you are in the `nxos-ansible` and issue the command: 
+>Note: You will need the `[all:vars]` section for every inventory file you create since we are using a custom connection protocol.  The other option is to use `connection: local` for each play.  If you are integrating with server environments, you may need a combination of both.
+
+Since you cloned the repo, just make sure you are in the `nxos-ansible` and issue the command: 
 
 `cisco@onepk:~/nxos-ansible$ cat hosts`
 
@@ -663,9 +669,6 @@ Playbook:
 
 - name: example 1 - baseline
   hosts: all
-  connection: local
-  gather_facts: no
-
 
   tasks:
     - name: ensure no logical interfaces exist on the switch
@@ -689,9 +692,6 @@ Playbook:
 
 - name: example 2 - VLANs
   hosts: all
-  connection: local
-  gather_facts: no
-
 
   tasks:
     - name: ensure VLANs 2-20 and 99 exist on all switches
@@ -718,9 +718,6 @@ Playbook:
 
 - name: example 3 - play 1 - spine interfaces
   hosts: spine
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -744,9 +741,6 @@ Playbook:
 
 - name: example 3 - play 2 - leaf interfaces
   hosts: leaf
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -782,9 +776,6 @@ Playbook:
 
 - name: example 4 - play 1 - spine portchannels
   hosts: spine
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -799,8 +790,6 @@ Playbook:
 
 - name: example 4 - play 2 - leaf portchannels
   hosts: leaf
-  connection: local
-  gather_facts: no
 
   tasks:
 
@@ -828,9 +817,6 @@ Playbook:
 
 - name: example 5 - get neighbors
   hosts: spine
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -880,9 +866,6 @@ Plabyook:
 
 - name: get neighbor data
   hosts: n9k1
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -946,9 +929,6 @@ Playbook:
 
 - name: get neighbor data
   hosts: n9k1
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
@@ -1207,8 +1187,6 @@ Playbook:
 
 - name: testing verbose mode
   hosts: n9k1
-  connection: local
-  gather_facts: no
 
   tasks:
     - nxos_vlan: vlan_id=10 name=APP_SEGMENT admin_state=up host={{ inventory_hostname }}
@@ -1255,8 +1233,6 @@ Playbook:
 
 - name: testing check mode
   hosts: n9k1
-  connection: local
-  gather_facts: no
 
   tasks:
     - nxos_switchport: interface=Ethernet1/1 mode=access access_vlan=10 host={{ inventory_hostname }}
