@@ -72,6 +72,8 @@ The setup that we are showing here will be using an Ubuntu machine from Cisco th
 
 If you wish to use your own Linux Operating System (including MAC OS), you should follow the detailed [installation steps found on Ansible's website.](http://docs.ansible.com/intro_installation.html#getting-ansible)
 
+This [YouTube video](https://www.youtube.com/watch?v=v9a_2-9hlus) goes through this process.
+
 Assuming you now have a base Linux distribution up and running, perform the following steps:
 
 **Step 1 - Update your system**
@@ -213,6 +215,8 @@ Ansible does not require a dedicated server to be used.  In fact, many machines 
 > Note: This option assumes you already have Docker installed.  If you don't, follow the instructions that can be found [here](https://docs.docker.com/installation/).
 
 The Docker image will come ready to go with Ansible along with the Cisco dependencies required to start automating Nexus environments.
+
+This [YouTube video](https://www.youtube.com/watch?v=ftxBCCKbVn4) goes through this process.
 
 ```
 sudo docker pull jedelman8/nxos-ansible
