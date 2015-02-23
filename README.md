@@ -1,7 +1,7 @@
 Network Automation with Ansible and Cisco Nexus Switches
 ========================
 
-Want to go an overview of the modules right away?  Check out the docs [here](docs/nexus-module-docs.md)
+#### Want to get an overview of the modules right away?  Check out the docs [here](docs/nexus-module-docs.md)
 
 ## Table of Contents
   
@@ -152,18 +152,16 @@ cisco@onepk:~$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
 cisco@onepk:~$ sudo mkdir -p /etc/ansible
 
-cisco@onepk:~$ sudo mkdir -p /usr/share/ansible
+cisco@onepk:~$ sudo mkdir -p /usr/share/ansible/cisco_nxos
 ```
 
 
 **Step 4: Move  Modules and Config to New Directories**
 
 ```
-cisco@onepk:~$ cd nxos-ansible
+cisco@onepk:~$ sudo mv nxos-ansible/files/ansible.cfg /etc/ansible/ansible.cfg
 
-cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/files/ansible.cfg /etc/ansible/ansible.cfg
-
-cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/library /usr/share/ansible/cisco_nxos
+cisco@onepk:~$ sudo mv nxos-ansible/library/ /usr/share/ansible/cisco_nxos/
 ```
 
 
@@ -176,23 +174,16 @@ cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/library /usr/share/ansible/cisc
 This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
 
 ```
-cisco@onepk:~/nxos-ansible$ sudo mv nxos-ansible/files/.netauth ~/.netauth
+cisco@onepk:~$ sudo mv nxos-ansible/files/.netauth ~/.netauth
 ```
 
 **Edit the file**
 ```
-cisco@onepk:~/nxos-ansible$ cd 
-
 cisco@onepk:~$ sudo vim .netauth
 ```
 
-Make changes using a text editor (example above is using vim) such that it follows the format below.  Your file MUST look like the one below (*just insert the username and password for your switches*).
+Make changes using a text editor (example above is using vim) such that it follows the format below.  Your file MUST continue to look the one provided (*just insert the username and password for your switches*).
 
-If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook for each task.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
-
-> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file outside of your working directory.
-> 
-> Note: this section will be updated over time to include instructions for using `ansible-vault`.
 
 ```
 # the .netauth file
@@ -206,6 +197,12 @@ cisco:
 
 ```
 
+
+If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook for each task.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
+
+> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file that exists outside of your working directory.
+> 
+> Note: this section will be updated over time to include instructions for using `ansible-vault`.
 
 ## Option 2 - Get Your Docker On
 
