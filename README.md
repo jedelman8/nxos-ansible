@@ -243,13 +243,12 @@ You should now be able to `ping n9k1` to get a response back from the MANAGEMENT
 
 **Step 3 - Update Authentication File**
 
-This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
-
-**Edit the auth file**
+**Edit the file**
 ```
-root@3b5d22fa1231b:~$ sudo vim ~/.netauth
-
+root@3b5d22fa1231b:~$ sudo vim .netauth
 ```
+
+Make changes using a text editor (example above is using vim) such that it follows the format below.  Your file MUST continue to look the one provided (*just insert the username and password for your switches*).
 
 ```
 # the .netauth file
@@ -263,11 +262,13 @@ cisco:
 
 ```
 
-Update the file so it incluces your proper credentials.  Save and Exit.
 
 If the username and password differs for a switch or group of switches, you must then use the username and password parameters in the Ansible playbook for each task.  This can be seen in the **Automated Data Collection** playbook examples that be found below.
 
+> Note: if you are using Ansible Tower, you'll need to disable a security setting to allow the use of .netauth to work, i.e. the reading in of values of a file that exists outside of your working directory.
+> 
 > Note: this section will be updated over time to include instructions for using `ansible-vault`.
+
 
 # Prepare Your Cisco Nexus Switches
 At this point, Ansible, the Cisco dependencies, and the custom Cisco Ansible modules should be installed on the *Ansible control host*  if you've been following along.  The last step is to ensure the Nexus switches are configured correctly to work with Ansible.  This basically means to ensure two things: (1) make sure NX-API is enabled and (2) make sure the Ansible control host can ping the  mgmt0 interface of the switch(es).
@@ -329,11 +330,11 @@ A sample playbook is shown below.  Assume that this playbook is saved as `nexus-
 ```
 
 
-As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of four key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  
+As you'll see above, the playbook is a set of automation instructions defined in YAML.  The `---` denotes the start of a YAML file, and in this case, also an Ansible playbook.  Just below, there is a grouping of two key-value pairs that will be used for the play that follows.  `name` is arbritary and is text that is displayed when the playbook is run. `hosts` denotes the host or group of hosts that will have the automation instructions, or tasks, executed against.  
 
-**If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!**  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.  `connection: local` and `gather_facts: no` are required since the default Ansible connection mechanism (SSH/Python) is not being used (remember NX-API is being used instead).  In more traditional server environments, these wouldn't be required.
+**If you named your switch something other than `n9k1` in the `/etc/hosts/` file, use your switch name!**  The inventory (or hosts) file is also an important component of Ansible that will be covered in the next section.
 
-Just below those four k-v pairs, there is a list of three tasks that will be automated.  They all call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
+Just below those two k-v pairs, there is a list of three tasks that will be automated.  They all call the `nxos_interface` module.  Following the module name are a number of key-value pairs in the form of key=value.  These k-v pairs are sent to the module for processing against the device.  
 
 > Note: Nearly all Cisco modules are idempotent, which means, if the device is already in the desired state, no change will be made.  A change will only be made if it's required to get the device into the desired state.  
 
@@ -544,9 +545,6 @@ In the working directory, create a new playbook called `config-builder.yml`. It 
 
 - name: template building
   hosts: wan
-  connection: local
-  gather_facts: no
-
 
   tasks:
 
