@@ -152,7 +152,7 @@ cisco@onepk:~$ git clone https://github.com/jedelman8/nxos-ansible.git
 ```
 cisco@onepk:~$ sudo mkdir -p /etc/ansible
 
-cisco@onepk:~$ sudo mkdir -p /usr/share/ansible/cisco_nxos
+cisco@onepk:~$ sudo mkdir -p /usr/share/ansible
 ```
 
 
@@ -161,7 +161,7 @@ cisco@onepk:~$ sudo mkdir -p /usr/share/ansible/cisco_nxos
 ```
 cisco@onepk:~$ sudo mv nxos-ansible/files/ansible.cfg /etc/ansible/ansible.cfg
 
-cisco@onepk:~$ sudo mv nxos-ansible/library/ /usr/share/ansible/cisco_nxos/
+cisco@onepk:~$ sudo mv nxos-ansible/library/ /usr/share/ansible/cisco_nxos
 ```
 
 
