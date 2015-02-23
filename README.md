@@ -228,7 +228,6 @@ Start your first container for automating networks!
 sudo docker run -it jedelman8/nxos-ansible
 ```
 
-
 **Step 2 - Update hosts File**
 
 Ensure you can ping your Nexus NX-API enabled switches by name (not required, but helpful) from the new container.  Here is a sample from a test container.  This shows the file after adding two new entries for `n9k1` and `n9k2`.
