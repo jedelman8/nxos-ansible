@@ -397,11 +397,10 @@ cisco@onepk:~/nxos-ansible$ ansible-playbook -i hosts nexus-automation.yml
 
 After running the playbook, feel free to check the changes out on your switch.
 
-In order to not have to continuously state where the hosts file is, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory, you can perform the following commands.
+In order to not have to continuously state where the hosts file is, you can set the `ANSIBLE_HOSTS` environment variable.  Within your working directory, you can `source` the `env-setup` file.
 
 ```
-cisco@onepk:~/nxos-ansible$ export ANSIBLE_HOSTS=hosts                
-cisco@onepk:~/nxos-ansible$ ansible-playbook nexus-automation.yml     
+cisco@onepk:~/nxos-ansible$ source env-setup                  
 ```
 
 That covers some of the basics to get started with Ansible.  The next section walks through how to use an Ansible core module called `template` that can help in creating network device templates and simplify how configuration files are created for network devices of all types.  Following the templating section is when we'll cover using the Cisco specific Ansible modules.
