@@ -206,14 +206,11 @@ If the username and password differs for a switch or group of switches, you must
 
 ## Option 2 - Get Your Docker On
 
-* [Download Docker Image](#download-docker-image)
-* [Update hosts File](#update-hosts-file)
-* [Update Authentication File](#update-authentication-file)
+**Step 1 - Download Docker Image**
 
-### Download Docker Image
 Ansible does not require a dedicated server to be used.  In fact, many machines could have Ansible installed and they can be used to simultaneuously automate any given environment (not recommending that here, but it's definitely a nice option to have). 
 
-> Note: This option assumes you already have Docker installed.  If you don't, follow the simple instructions that can be followed [here](https://docs.docker.com/installation/).
+> Note: This option assumes you already have Docker installed.  If you don't, follow the instructions that can be found [here](https://docs.docker.com/installation/).
 
 The Docker image will come ready to go with Ansible along with the Cisco dependencies required to start automating Nexus environments.
 
@@ -222,7 +219,7 @@ sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
 ```
 
 
-### Update hosts File
+**Step 2 - Update hosts File**
 
 Ensure you can ping your Nexus NX-API enabled switches by name (not required, but helpful) from the new container.  Here is a sample from a test container.  This shows the file after adding two new entries for `n9k1` and `n9k2`.
 
@@ -244,7 +241,7 @@ root@3b5d22fa1231b:~$ cat /etc/hosts
 You should now be able to `ping n9k1` to get a response back from the MANAGEMENT IP address of the Nexus switch.
 
 
-### Update Authentication File
+**Step 3 - Update Authentication File**
 
 This is an optional step, but simplifies the Ansible playbooks by not needing to include a username and password for each task.
 
