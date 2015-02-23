@@ -215,7 +215,17 @@ Ansible does not require a dedicated server to be used.  In fact, many machines 
 The Docker image will come ready to go with Ansible along with the Cisco dependencies required to start automating Nexus environments.
 
 ```
-sudo docker run --name nxos_ansible_001 -d jedelman8/nxos-ansible
+sudo docker pull jedelman8/nxos-ansible
+```
+
+Make sure you see the new image
+```
+sudo docker images
+```
+
+Start your first container for automating networks!
+```
+sudo docker run -it jedelman8/nxos-ansible
 ```
 
 

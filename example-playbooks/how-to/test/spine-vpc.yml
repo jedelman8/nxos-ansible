@@ -8,24 +8,6 @@
 
   tasks:
 
-    #############################################################
-    # DEFAULT (CLEAN) ALL INTERFACES IN SCOPE FOR THIS DEPLOYMENT
-    #############################################################
-    - name: default all ports in scope
-      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
-      with_items:
-        - Ethernet1/1
-        - Ethernet1/2
-        - Ethernet2/1
-        - Ethernet2/12
-
-    - name: ensure no logical interfaces exist
-      nxos_interface: interface={{ item }} state=absent host={{ inventory_hostname }}
-      with_items:
-        - loopback
-        - svi
-        - portchannel
-
     ############################################################
     #  VLAN CONFIGURATION
     ############################################################
