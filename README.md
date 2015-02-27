@@ -1043,7 +1043,7 @@ Testing was performed on the following platforms:
 
 **Software Dependencies**
 
-The modules depend on two Python libraries: `pycsco` and `xmltodict`.  They can both be installed with `pip`.  More detail on `pycsco` can be found [here](https://github.com/jedelman8/pycsco)
+The modules depend on two Python libraries: `pycsco` and `xmltodict`.  They can both be installed with `pip`.  More detail on `pycsco` can be found [here](https://github.com/jedelman8/pycsco).
 
 # Contributions
 
