@@ -653,7 +653,7 @@ n9k4
 If you are following along, you can build the playbooks yourself or move/copy them from the `example-playbooks` directory into the `nxos-ansible` directory.  The file name for each playbook can be seen below in the text on the first line of each playbook.  You can use the `mv` or `cp` commands to move the files accordingly.  To get them all at once, issue the following command:
 
 ```
-cisco@onepk:~/nxos-ansible$ cp example-playbooks/readme-example*.yml .
+cisco@onepk:~/nxos-ansible$ cp example-playbooks/how-to/readme-example*.yml .
 ```
 
 
