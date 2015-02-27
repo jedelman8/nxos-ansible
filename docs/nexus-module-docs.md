@@ -3,10 +3,7 @@
 
 ---
 ### Requirements
- * pycisco
- * Nexus 9000
- * NX-OS 6.1(2)I3(1)
- * Testing performed on 9396 switches
+ * Check the [README](../README.md#requirements)
 
 ---
 ### Modules
