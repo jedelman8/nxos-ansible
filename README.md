@@ -1026,18 +1026,20 @@ Overview of each module in traditional Ansible style tables format.
 # Requirements
 
 **API**
+
 Nexus switch that supports NX-API 1.0.  You can verify this through the NX-API sandbox (look in the bottom right of your browser after you login to the sandbox at http://<nexus_ip_addr>)
 
 **Privileges**
+
 Proper privileges on the switch.  You can use the pre-defined system role that offers "devops" privileges or use the "network-admin" role.
 
 **Hardware**
+
 Currently, Nexus 3000 and 9000 platforms. 7K/5K coming soon.
 
 Testing was performed on the following platforms:
   * 3064: 6.0(2)U4(1)
   * 9396: 6.1(2)I3(1)
-
 
 # Contributions
 
