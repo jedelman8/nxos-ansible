@@ -1041,6 +1041,10 @@ Testing was performed on the following platforms:
   * 3064: 6.0(2)U4(1)
   * 9396: 6.1(2)I3(1)
 
+**Software Dependencies**
+
+The modules depend on two Python libraries: `pycsco` and `xmltodict`.  They can both be installed with `pip`.  More detail on `pycsco` can be found [here](https://github.com/jedelman8/pycsco)
+
 # Contributions
 
 Please contribute! Feel free to open issues or pull requests pertaining to the documentation, code, and playbooks, If you have good use cases, feel free to add them to the repo too.
