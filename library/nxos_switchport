@@ -186,6 +186,7 @@ def main():
                              + 'mode=access && state=present')
 
     current_mode = nxapi_lib.get_interface_mode(device, interface)
+
     # Current mode will return layer3, layer2, or unknown
     if current_mode == 'unknown' or current_mode == 'layer3':
         module.fail_json(msg='Ensure interface is configured to be a L2 port '
