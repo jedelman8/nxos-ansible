@@ -164,9 +164,9 @@ def main():
         if module.check_mode:
             module.exit_json(changed=True, commands=cmds)
         else:
-            existing_state = nxapi_lib.feature_enabled(device, feature)
             changed = True
             device.config(cmds)
+            existing_state = nxapi_lib.feature_enabled(device, feature)
             if existing_state:
                 existstate = 'enabled'
             else:
