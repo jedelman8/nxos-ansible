@@ -68,7 +68,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -112,7 +112,8 @@ def main():
 
     detail = module.params['detail']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     facts = nxapi_lib.get_facts(device)
 

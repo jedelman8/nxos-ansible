@@ -92,7 +92,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 EXAMPLES = '''
@@ -142,7 +142,8 @@ def main():
     reset = module.params['reset']
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     args = dict(aggressive=aggressive, msg_time=msg_time, reset=reset)
     '''
