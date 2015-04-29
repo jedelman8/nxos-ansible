@@ -318,11 +318,13 @@ def main():
         commands = []
         status = nxapi_lib.is_default(device, e_interface)
         if state == 'absent':
-            if intf_type in ['svi', 'loopback', 'portchannel'] \
-                    and status != 'DNE':
-                if not e_interface == 'vlan1':
-                    cmds = nxapi_lib.remove_interface(device, e_interface)
-                    commands.append(cmds)
+            if intf_type in ['svi', 'loopback', 'portchannel']:
+                if status != 'DNE':
+                    if not e_interface == 'vlan1':
+                        cmds = nxapi_lib.remove_interface(device, e_interface)
+                        commands.append(cmds)
+                elif status == 'DNE':
+                    pass
             elif intf_type in ['ethernet']:
                 if status is False:
                     cmds = nxapi_lib.default_interface(device, e_interface)
