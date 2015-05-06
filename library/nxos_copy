@@ -117,7 +117,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -172,7 +172,8 @@ def main():
     host = socket.gethostbyname(module.params['host'])
     server_pw = module.params['server_pw']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
     device.set_timeout = 120
 
     local_path = module.params['local_path']

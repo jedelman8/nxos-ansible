@@ -75,7 +75,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -124,7 +124,8 @@ def main():
     feature = module.params['feature'].lower()
     state = module.params['state'].lower()
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     avail_features = nxapi_lib.get_feature_list(device)
     if feature not in avail_features:
