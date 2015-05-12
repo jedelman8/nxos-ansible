@@ -1,0 +1,14 @@
+---
+
+- name: vlan provisioning
+  hosts: spine
+  connection: local
+  gather_facts: no
+  vars:
+    vname: name_30
+
+  tasks:
+
+    - name: ensure vlan exists
+      nxos_vlan: vlan_id={{ item.vid }} state=present host={{ inventory_hostname }}
+      with_items: abc

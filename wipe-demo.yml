@@ -1,0 +1,44 @@
+---
+
+- name: wipe out demo configs
+  hosts: all
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    -  nxos_vlan: vlan_id="2-1000" state=absent host={{ inventory_hostname }}
+
+    #############################################################
+    # Layer 2 switchport configs
+    #############################################################
+    - nxos_interface: interface={{ item }} state=absent host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet1/2
+        - Ethernet2/1
+        - Ethernet2/12
+        - vlan10
+        - vlan20
+        - port-channel10
+        - port-channel11
+        - port-channel12
+        - port-channel100
+        - Ethernet1/48
+        - Ethernet1/49
+        - Ethernet1/50
+      ignore_errors: true
+
+    - nxos_vrf: vrf=keepalive host={{ inventory_hostname }} state=absent
+
+
+    #############################################################
+    # Global VPC Configuration
+    #############################################################
+
+    - nxos_vpc:
+        domain={{ item.value.domain }}
+        state=absent
+        host={{ inventory_hostname }}
+      with_dict: vpc
+      ignore_errors: true

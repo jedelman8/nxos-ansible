@@ -1,0 +1,58 @@
+---
+
+- name: leaf configuration
+  hosts: n3064-2.networktocode.com
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    ############################################################
+    #  VLAN CONFIGURATION
+    ############################################################
+    - name: ensure VLANs exist on switches
+      nxos_vlan: vlan_id="2-19,99" state=present host={{ inventory_hostname }} username={{ username }} password={{ password }}
+
+    - name: ensure names exist for important vlans
+      nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present username={{ username }} password={{ password }}
+      with_items:
+        - { vlan_id: 10, name: test_segment }
+        - { vlan_id: 99, name: native }
+
+
+    #############################################################
+    # Layer 2 switchport configs
+    #############################################################
+    - name: L2 config for uplinks
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-19 host={{ inventory_hostname }} username={{ username }} password={{ password }}
+      with_items:
+        - Ethernet1/49
+        - Ethernet1/50
+
+    #############################################################
+    # Portchannels
+    #############################################################
+
+
+    - nxos_portchannel:
+        group: 100
+        members: ['Ethernet1/49','Ethernet1/50']
+        mode: active
+        host: "{{ inventory_hostname }}"
+        state: present
+        username: "{{ username }}"
+        password: "{{ password }}"
+
+
+    #############################################################
+    # Layer 3 Configuration
+    #############################################################
+
+    - name: create logical vlan interfaces
+      nxos_interface: interface={{ item }} host={{ inventory_hostname }} username={{ username }} password={{ password }}
+      with_items:
+        - vlan10
+
+    - name: assign IP addresses
+      nxos_ipv4_interface: interface=vlan10 ip_addr={{ test_svi }} mask=24 host={{ inventory_hostname }} username={{ username }} password={{ password }}

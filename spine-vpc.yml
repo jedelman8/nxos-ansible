@@ -12,10 +12,10 @@
     #  VLAN CONFIGURATION
     ############################################################
     - name: ensure VLANs exist on switches
-      nxos_vlan: vlan_id="2-20,99" state=present host={{ inventory_hostname }}
+      nxos_vlan: vlan_id="2-20,99" state=present host={{ inventory_hostname }} username={{ username }} password={{ password }}
 
     - name: ensure names exist for important vlans
-      nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present
+      nxos_vlan: vlan_id={{ item.vlan_id }} name={{ item.name }} host={{ inventory_hostname }} state=present username={{ username }} password={{ password }}
       with_items:
         - { vlan_id: 10, name: test_segment }
         - { vlan_id: 20, name: peer_keepalive }
@@ -26,14 +26,14 @@
     # Layer 2 switchport configs
     #############################################################
     - name: L2 config for all ports except peer keepalive
-      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }}
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=2-20 host={{ inventory_hostname }} username={{ username }} password={{ password }}
       with_items:
         - Ethernet1/1
         - Ethernet1/2
         - Ethernet2/1
 
     - name: L2 config for peer keepalive link
-      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=20 host={{ inventory_hostname }}
+      nxos_switchport: interface={{ item }} mode=trunk native_vlan=99 trunk_vlans=20 host={{ inventory_hostname }} username={{ username }} password={{ password }}
       with_items:
         - Ethernet2/12
 
@@ -50,6 +50,8 @@
         mode: active
         host: "{{ inventory_hostname }}"
         state: present
+        username: cisco
+        password: "{{ password }}"
 
     - nxos_portchannel:
         group: 11
@@ -57,6 +59,8 @@
         mode: active
         host: "{{ inventory_hostname }}"
         state: present
+        username: cisco
+        password: "{{ password }}"
 
     - nxos_portchannel:
         group: 12
@@ -64,30 +68,31 @@
         mode: active
         host: "{{ inventory_hostname }}"
         state: present
-
+        username: cisco
+        password: "{{ password }}"
 
     #############################################################
     # Layer 3 Configuration
     #############################################################
 
     - name: create logical vlan interfaces
-      nxos_interface: interface={{ item }} host={{ inventory_hostname }}
+      nxos_interface: interface={{ item }} host={{ inventory_hostname }} username={{ username }} password={{ password }}
       with_items:
         - vlan10
         - vlan20
 
     - name: ensure VRF for peer keepalive is created
-      nxos_vrf: vrf=keepalive host={{ inventory_hostname }}
+      nxos_vrf: vrf=keepalive host={{ inventory_hostname }} username={{ username }} password={{ password }}
 
-    - name: assign VRF to peer keepalive link interfaces
-      nxos_vrf_interface: interface=vlan20 vrf=keepalive host={{ inventory_hostname }}
+    - name: assgn VRF to peer keepalive link interfaces
+      nxos_vrf_interface: interface=vlan20 vrf=keepalive host={{ inventory_hostname }} username={{ username }} password={{ password }}
 
     - name: assign IP addresses
-      nxos_ipv4_interface: interface={{ item.interface }} ip_addr={{ item.ip }} mask={{ item.mask }} host={{ inventory_hostname }}
+      nxos_ipv4_interface: interface={{ item.interface }} ip_addr={{ item.ip }} mask={{ item.mask }} host={{ inventory_hostname }} username={{ username }} password={{ password }}
       with_items: layer3ip
 
     - name: config HSRP
-      nxos_hsrp: group={{ item.group }} interface={{ item.interface }} vip={{ item.vip }} priority={{ hsrp_priority }} host={{ inventory_hostname }}
+      nxos_hsrp: group={{ item.group }} interface={{ item.interface }} vip={{ item.vip }} priority={{ hsrp_priority }} host={{ inventory_hostname }} username={{ username }} password={{ password }}
       with_items: hsrp
 
     #############################################################
@@ -103,6 +108,8 @@
         pkl_dest={{ item.value.pkl.dest }}
         pkl_vrf={{ item.value.pkl.vrf }}
         host={{ inventory_hostname }}
+        username={{ username }}
+        password={{ password }}
       with_dict: vpc
 
     #############################################################
@@ -110,7 +117,7 @@
     #############################################################
 
     - name: portchannel vpc peer link configuration
-      nxos_vpc_interface:  portchannel=10 peer_link=true host={{ inventory_hostname }}
+      nxos_vpc_interface:  portchannel=10 peer_link=true host={{ inventory_hostname }} username={{ username }} password={{ password }}
 
     - name: portchannel vpc  configuration
-      nxos_vpc_interface:  portchannel=11 vpc=11 host={{ inventory_hostname }}
+      nxos_vpc_interface:  portchannel=11 vpc=11 host={{ inventory_hostname }} username={{ username }} password={{ password }}

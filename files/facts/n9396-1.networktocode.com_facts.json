@@ -1,0 +1,60 @@
+DEVICE: n9396-1.networktocode.com
+
+Power Supply Info:
+[
+    {
+        "actual_input": "None", 
+        "actual_output": "0 W", 
+        "model": "N9K-PAC-650W", 
+        "number": "1", 
+        "status": "Shutdown", 
+        "total_capacity": "0 W"
+    }, 
+    {
+        "actual_input": "None", 
+        "actual_output": "136 W", 
+        "model": "N9K-PAC-650W", 
+        "number": "2", 
+        "status": "Ok", 
+        "total_capacity": "649 W"
+    }
+]
+
+Fan Info:
+[
+    {
+        "direction": "front-to-back", 
+        "hw_ver": "--", 
+        "model": "N9K-C9300-FAN2", 
+        "name": "Fan1(sys_fan1)", 
+        "status": "None"
+    }, 
+    {
+        "direction": "front-to-back", 
+        "hw_ver": "--", 
+        "model": "N9K-C9300-FAN2", 
+        "name": "Fan2(sys_fan2)", 
+        "status": "None"
+    }, 
+    {
+        "direction": "front-to-back", 
+        "hw_ver": "--", 
+        "model": "N9K-C9300-FAN2", 
+        "name": "Fan3(sys_fan3)", 
+        "status": "None"
+    }, 
+    {
+        "direction": "front-to-back", 
+        "hw_ver": "--", 
+        "model": "--", 
+        "name": "Fan_in_PS1", 
+        "status": "None"
+    }, 
+    {
+        "direction": "front-to-back", 
+        "hw_ver": "--", 
+        "model": "--", 
+        "name": "Fan_in_PS2", 
+        "status": "None"
+    }
+]

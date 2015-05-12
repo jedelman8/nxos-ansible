@@ -1,0 +1,7 @@
+DEVICE: {{ inventory_hostname }}
+
+Power Supply Info:
+{{ power_supply_info | to_nice_json }}
+
+Fan Info:
+{{ fan_info | to_nice_json }}

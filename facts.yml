@@ -1,0 +1,14 @@
+---
+
+- name: get facts
+  hosts: n9396-1.networktocode.com
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    - name: get facts 1
+      nxos_get_facts: host={{ inventory_hostname }} username={{ username }} password={{ password }}
+
+    - template: src=templates/facts.j2 dest=files/facts/{{ inventory_hostname }}_facts.json

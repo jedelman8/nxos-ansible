@@ -1,0 +1,17 @@
+---
+
+layer3ip:
+  - { interface: vlan10, ip: 10.1.10.3, mask: 24 }
+  - { interface: vlan20, ip: 10.1.20.3, mask: 24 }
+
+vpc:
+  dummy:
+    domain: 100
+    systempri: 2000
+    rolepri: 2000
+    pkl:
+      src: 10.1.20.3
+      dest: 10.1.20.2
+      vrf: keepalive
+
+hsrp_priority: 100

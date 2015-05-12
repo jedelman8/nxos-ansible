@@ -2,17 +2,9 @@
 ansible_connection = local
 
 [spine]
-n9k1
-n9k2
+n9396-1.networktocode.com
+n9396-2.networktocode.com
 
 [leaf]
-n9k3
-n9k4
-n3k1
-
-[wan]
-boston  mgmt_ip=10.1.10.1
-nyc  mgmt_ip=10.1.20.1
-sjc
-rtp
-richardson
+n3064-1.networktocode.com
+n3064-2.networktocode.com

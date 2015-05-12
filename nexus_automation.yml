@@ -1,0 +1,29 @@
+---
+
+-  name: snmp testing
+   hosts: n9396-1.networktocode.com
+   connection: local
+   gather_facts: no
+
+   tasks:
+
+     - nxos_snmp_traps: state=enabled host={{ inventory_hostname }} group=link
+     #- nxos_snmp_host: snmp_host=2.2.2.2 state=present type=trap version=v3 community=EDELMAN host={{ inventory_hostname }}
+     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v3 type=inform v3=auth src_intf='mgmt0' vrf=yankees host={{ inventory_hostname }}
+     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v3 type=trap v3=noauth src_intf='eth1/1' vrf=yankees host={{ inventory_hostname }}
+     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v2c type=trap src_intf='eth1/1' vrf=yankees host={{ inventory_hostname }}
+     #- nxos_snmp_location: location='NYC YNYC Edelman' state=present host={{ inventory_hostname }}
+     #- nxos_snmp_contact: contact='Jason Edelman' state=present host={{ inventory_hostname }}
+     # - nxos_snmp_community: community=YANKS access=rw state=present acl=my_acl host={{ inventory_hostname }}
+     #- nxos_snmp_user: user=JASON group=dev-ops  host={{ inventory_hostname }} auth=sha encrypt=true privacy=AASDFDasd12S pwd=EDELMAN12345 state=present
+     #auth=sha encrypt=true privacy=AASDFDasd12S pwd=EDELMAN12345
+
+
+
+    #     5. O'Reilly
+    # 3. Cisco SOW for FlowTracker
+    # 4. 3 more modules (snmp host, traps/src interfaces, hostname)
+
+    # Suffolk
+    # Cicero
+    # Cisco LIVE
