@@ -83,7 +83,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 EXAMPLES = '''
@@ -135,7 +135,8 @@ def main():
     mode = module.params['mode']
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     proposed = dict(mode=mode)
     if not nxapi_lib.feature_enabled(device, 'udld'):

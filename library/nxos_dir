@@ -76,7 +76,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -122,7 +122,8 @@ def main():
     host = socket.gethostbyname(module.params['host'])
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     path = module.params['path']
     valid_list = ['bootflash', 'debug', 'log', 'logflash', 'usb1', 'usb2',

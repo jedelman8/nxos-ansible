@@ -89,7 +89,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -178,7 +178,8 @@ def main():
     vrf = module.params['vrf']
     source = module.params['source']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     OPTIONS = {
         'vrf': vrf,

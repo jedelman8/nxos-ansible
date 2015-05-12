@@ -116,7 +116,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -189,7 +189,8 @@ def main():
     mode = module.params['mode']
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     changed = False
 

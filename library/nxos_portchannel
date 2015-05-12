@@ -99,7 +99,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 EXAMPLES = '''
@@ -164,7 +164,8 @@ def main():
 
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
     if mode in ['active', 'passive']:
         if not nxapi_lib.feature_enabled(device, 'lacp'):
             module.fail_json(msg='LACP feature needs to be enabled first')

@@ -110,7 +110,8 @@ def main():
     host = socket.gethostbyname(module.params['host'])
 
     neigh_type = module.params['type'].lower()
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     neighbors = nxapi_lib.get_neighbors(device, neigh_type)
 

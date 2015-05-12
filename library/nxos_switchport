@@ -111,7 +111,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 EXAMPLES = '''
@@ -170,7 +170,8 @@ def main():
     trunk_vlans = module.params['trunk_vlans']
     native_vlan = module.params['native_vlan']
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     args = dict(interface=interface, mode=mode, access_vlan=access_vlan,
                 native_vlan=native_vlan, trunk_vlans=trunk_vlans)

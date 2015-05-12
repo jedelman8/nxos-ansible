@@ -93,7 +93,7 @@ options:
             - Dictates connection protocol to use for NX-API
         required: false
         default: http
-        choices: ['http']
+        choices: ['http', 'https']
         aliases: []
 '''
 
@@ -150,7 +150,8 @@ def main():
     text = module.params['text'] or False
     cmd_type = module.params['type'].lower()
 
-    device = Device(ip=host, username=username, password=password)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     if cmd_type == 'show':
         if isinstance(command, list):
