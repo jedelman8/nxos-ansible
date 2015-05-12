@@ -20,7 +20,7 @@ DOCUMENTATION = '''
 module: nxos_snmp_location
 short_description: Manages SNMP location information
 description:
-    - Manages SNMP location information
+    - Manages SNMP location configuration
 author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0

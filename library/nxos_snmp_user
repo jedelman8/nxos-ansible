@@ -20,7 +20,7 @@ DOCUMENTATION = '''
 module: nxos_snmp_user
 short_description: Manages SNMP users for monitoring
 description:
-    - Manages SNMP usres configuration
+    - Manages SNMP user configuration
 author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0

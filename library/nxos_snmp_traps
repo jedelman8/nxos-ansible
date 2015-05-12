@@ -20,7 +20,7 @@ DOCUMENTATION = '''
 module: nxos_snmp_trap
 short_description: Manages SNMP traps
 description:
-    - Manages SNMP traps
+    - Manages SNMP traps configurations
 author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0

@@ -18,7 +18,7 @@ DOCUMENTATION = '''
 ---
 
 module: nxos_snmp_contact
-short_description: Manages SNMP contact information
+short_description: Manages SNMP contact info
 description:
     - Manages SNMP contact information
 author: Jason Edelman (@jedelman8)
