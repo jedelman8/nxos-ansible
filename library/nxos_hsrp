@@ -161,6 +161,7 @@ def main():
             auth_type=dict(choices=['text', 'md5']),
             auth_string=dict(type='str'),
             state=dict(choices=['absent', 'present'], default='present'),
+            protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -171,7 +172,7 @@ def main():
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
-
+    protocol = module.params['protocol']
     host = socket.gethostbyname(module.params['host'])
 
     interface = module.params['interface']

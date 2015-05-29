@@ -108,6 +108,7 @@ def main():
         argument_spec=dict(
             feature=dict(type='str', required=True),
             state=dict(choices=['enabled', 'disabled'], required=True),
+            protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -118,7 +119,7 @@ def main():
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
-
+    protocol = module.params['protocol']
     host = socket.gethostbyname(module.params['host'])
 
     feature = module.params['feature'].lower()

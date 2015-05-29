@@ -115,6 +115,7 @@ def main():
             vrf=dict(required=True),
             interface=dict(type='str'),
             state=dict(default='present', choices=['present', 'absent']),
+            protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -125,6 +126,7 @@ def main():
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
 
     host = socket.gethostbyname(module.params['host'])
 

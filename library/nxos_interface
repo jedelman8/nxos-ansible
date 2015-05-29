@@ -168,6 +168,7 @@ def main():
             speed=dict(default=None),
             description=dict(default=None),
             mode=dict(choices=['layer2', 'layer3']),
+            protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -178,7 +179,7 @@ def main():
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
-
+    protocol = module.params['protocol']
     host = socket.gethostbyname(module.params['host'])
 
     interface = module.params['interface'].lower()

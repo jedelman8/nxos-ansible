@@ -141,6 +141,7 @@ def main():
             vlan_state=dict(choices=['active', 'suspend'], default='active'),
             state=dict(choices=['present', 'absent'], default='present'),
             admin_state=dict(choices=['up', 'down'], default='up'),
+            protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -151,7 +152,7 @@ def main():
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
-
+    protocol = module.params['protocol']
     host = socket.gethostbyname(module.params['host'])
 
     vlan_id = module.params['vlan_id']
