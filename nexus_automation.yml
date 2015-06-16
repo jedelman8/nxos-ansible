@@ -1,26 +1,19 @@
 ---
 
--  name: snmp testing
-   hosts: n9396-1.networktocode.com
-   connection: local
-   gather_facts: no
+- name: sample playbook
+  hosts: n9k1
 
-   tasks:
+  tasks:
 
-     - nxos_snmp_traps: state=enabled host={{ inventory_hostname }} group=link
-     #- nxos_snmp_host: snmp_host=2.2.2.2 state=present type=trap version=v3 community=EDELMAN host={{ inventory_hostname }}
-     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v3 type=inform v3=auth src_intf='mgmt0' vrf=yankees host={{ inventory_hostname }}
-     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v3 type=trap v3=noauth src_intf='eth1/1' vrf=yankees host={{ inventory_hostname }}
-     #- nxos_snmp_host: snmp_host=2.2.2.2 community=YESYESYES version=v2c type=trap src_intf='eth1/1' vrf=yankees host={{ inventory_hostname }}
-     #- nxos_snmp_location: location='NYC YNYC Edelman' state=present host={{ inventory_hostname }}
-     #- nxos_snmp_contact: contact='Jason Edelman' state=present host={{ inventory_hostname }}
-     # - nxos_snmp_community: community=YANKS access=rw state=present acl=my_acl host={{ inventory_hostname }}
-     #- nxos_snmp_user: user=JASON group=dev-ops  host={{ inventory_hostname }} auth=sha encrypt=true privacy=AASDFDasd12S pwd=EDELMAN12345 state=present
-     #auth=sha encrypt=true privacy=AASDFDasd12S pwd=EDELMAN12345
+    - name: default interfaces
+      nxos_interface: interface={{ item }} state=default host={{ inventory_hostname }}
+      with_items:
+        - Ethernet1/1
+        - Ethernet2/1
 
+    # Ensure an interface is a Layer 3 port and that it has the proper description
+    - name: config interface
+      nxos_interface: interface=Ethernet1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
 
-
-    # Suffolk
-    # Cicero
-    # Cisco LIVE
-    # Infoblox PPT
+    # Admin down an interface
+    - nxos_interface: interface=Ethernet2/1 admin_state=down host={{ inventory_hostname }}
