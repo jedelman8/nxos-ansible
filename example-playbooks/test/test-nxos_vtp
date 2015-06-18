@@ -1,0 +1,101 @@
+---
+
+- name: vtp testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+  # set all three parameters
+  - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+    register: vtp_data
+    tags: 
+      - vtp
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'ntc'"
+        - "vtp_data['final']['version'] == '1'"
+        - "vtp_data['final']['vtp_password'] == 'vpass'"
+
+  # change just version
+  - nxos_vtp: version=2 host={{ inventory_hostname }} 
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'ntc'"
+        - "vtp_data['final']['version'] == '2'"
+        - "vtp_data['final']['vtp_password'] == 'vpass'"
+
+  # no op
+  - nxos_vtp: host={{ inventory_hostname }} 
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'ntc'"
+        - "vtp_data['final']['version'] == '2'"
+        - "vtp_data['final']['vtp_password'] == 'vpass'"
+
+  # change just vtp_password
+  - nxos_vtp: vtp_password=vpass2 host={{ inventory_hostname }} 
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'ntc'"
+        - "vtp_data['final']['version'] == '2'"
+        - "vtp_data['final']['vtp_password'] == 'vpass2'"
+
+  # change just domain
+  - nxos_vtp: domain=mydomain host={{ inventory_hostname }} 
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'mydomain'"
+        - "vtp_data['final']['version'] == '2'"
+        - "vtp_data['final']['vtp_password'] == 'vpass2'"
+
+  # remove password
+  - nxos_vtp: state=absent vtp_password=vpass2 host={{ inventory_hostname }} 
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'mydomain'"
+        - "vtp_data['final']['version'] == '2'"
+        - "vtp_data['final']['vtp_password'] != 'vpass2'"
+
+  # out of scope version number - should fail
+  - nxos_vtp: version=99 host={{ inventory_hostname }} 
+    ignore_errors: yes
+    register: fail_object
+
+  - assert:
+      that: 
+        - "fail_object['failed'] == true"
+
+  # can't remove domain name
+  - nxos_vtp: state=absent domain=test vtp_password=vpass2 host={{ inventory_hostname }} 
+    ignore_errors: yes
+    register: fail_object
+
+  - assert:
+      that: 
+        - "fail_object['failed'] == true"
+
+  # can't remove version
+  - nxos_vtp: state=absent version=1 vtp_password=vpass2 host={{ inventory_hostname }} 
+    ignore_errors: yes
+    register: fail_object
+
+  - assert:
+      that: 
+        - "fail_object['failed'] == true"
+
+
+

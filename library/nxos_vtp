@@ -97,7 +97,8 @@ options:
         aliases: []
 '''
 EXAMPLES = '''
-
+  # set all three parameters
+  - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
 '''
 
 import socket
@@ -147,8 +148,8 @@ def main():
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -182,7 +183,10 @@ def main():
         if 'version' in proposed:
             module.fail_json(msg='The version parameter is not supported when state=absent. Version can be set to \'1\' or \'2\' when state=present')
 
-    existing = vtp.get_vtp_current_cfg(device)
+    try:
+        existing = vtp.get_vtp_current_cfg(device)
+    except CLIError as e:
+        module.fail_json(msg=str(e))
 
     if module.params['state'] == 'absent':
         if existing['vtp_password'] == proposed['vtp_password']:
