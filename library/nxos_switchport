@@ -152,8 +152,8 @@ def main():
                        default='present'),
             protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
         ),
         supports_check_mode=True
     )
