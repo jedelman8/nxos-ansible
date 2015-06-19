@@ -151,18 +151,18 @@ def main():
             community=dict(type='str'),
             udp=dict(type='str'),
             version=dict(choices=['v2c', 'v3'],
-                       default='v2c'),
+                         default='v2c'),
             src_intf=dict(type='str'),
             v3=dict(choices=['noauth', 'auth', 'priv']),
             vrf_filter=dict(type='str'),
             vrf=dict(type='str'),
             type=dict(choices=['trap', 'inform'],
-                       default='trap'),
+                      default='trap'),
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -194,18 +194,22 @@ def main():
         module.fail_json(msg='inform requires snmp v3')
 
     if version == 'v2c' and v3:
-        module.fail_json(msg='param: "v3" should not be used when using version v2c')
+        module.fail_json(msg='param: "v3" should not be used when '
+                         + 'using version v2c')
 
-    if not any ([vrf_filter, vrf, udp, src_intf]):
-        if not all ([type1, version, community]):
-            module.fail_json(msg='when not configuring options like vrf_filter, ' +
-                             'vrf, udp, and src_intf,\nthe following params are required: ' +
-                             'type, version, community')
+    if not any([vrf_filter, vrf, udp, src_intf]):
+        if not all([type1, version, community]):
+            module.fail_json(msg='when not configuring options like '
+                             + 'vrf_filter, vrf, udp, and src_intf,\n'
+                             + 'the following params are required: '
+                             + 'type, version, community')
 
     if version == 'v3' and v3 is None:
-        module.fail_json(msg='when using version=v3, the param v3 (options: auth,\n noauth, priv) is also required')
+        module.fail_json(msg='when using version=v3, the param v3 '
+                         + '(options: auth,\n noauth, priv) is also required')
 
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     existing = snmp.get_snmp_host(device, snmp_host)
 
@@ -220,9 +224,9 @@ def main():
 
     proposed = {}
     for k, v in module.params.iteritems():
-        if k not in ['host', 'username', 'password', 'protocol', 'state'] and v:
+        if k not in ['host', 'username', 'password',
+                     'protocol', 'state'] and v:
             proposed[k] = v
-
 
     delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
 
@@ -249,7 +253,7 @@ def main():
         else:
             changed = True
             device.config(cmds)
-
+            results['new'] = snmp.get_snmp_host(device, snmp_host)
 
     if store:
         existing['vrf_filter'] = store
@@ -257,7 +261,6 @@ def main():
     results = {}
     results['proposed'] = proposed
     results['existing'] = existing
-    results['new'] = snmp.get_snmp_host(device, snmp_host)
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed

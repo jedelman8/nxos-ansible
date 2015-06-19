@@ -125,8 +125,8 @@ def main():
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -152,7 +152,8 @@ def main():
         module.fail_json(msg='one of the params: access or group is required')
 
     if access and group:
-        module.fail_json(msg='please only use one of the params: access or group in a given task')
+        module.fail_json(msg='please only use one of the params: access'
+                         + ' or group in a given task')
 
     if access:
         if access == 'ro':
@@ -160,26 +161,27 @@ def main():
         elif access == 'rw':
             group = 'network-admin'
 
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     # group check - ensure group being configured exists on the device
 
     configured_groups = snmp.get_snmp_groups(device)
 
     if group not in configured_groups:
-        module.fail_json(msg='group not on switch.  please add before moving forward')
+        module.fail_json(msg='group not on switch.'
+                         + 'please add before moving forward')
 
     existing = snmp.get_snmp_community(device, community)
 
     args = dict(group=group, acl=acl)
 
-    proposed= {}
+    proposed = {}
     for k, v in args.iteritems():
         if v:
             proposed[k] = v
 
     delta = set(proposed.iteritems()).difference(existing.iteritems())
-
 
     changed = False
 
@@ -204,11 +206,11 @@ def main():
         else:
             changed = True
             device.config(cmds)
+            results['new'] = snmp.get_snmp_community(device, community)
 
     results = {}
     results['proposed'] = proposed
     results['existing'] = existing
-    results['new'] = snmp.get_snmp_community(device, community)
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed
