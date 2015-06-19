@@ -113,35 +113,6 @@ try:
 except ImportError as e:
     HAS_PYCSCO = False
 
-
-def config_vtp(device, params):
-    vtp_commands = []
-
-    domain = params.get('domain')
-    if domain:
-        vtp_commands.append('vtp domain ' + domain)
-
-    version = params.get('version')
-    if version:
-        vtp_commands.append('vtp version ' + version)
-
-    password = params.get('vtp_password')
-    if password:
-        vtp_commands.append('vtp password ' + password)
-
-    return vtp_commands
-
-
-def remove_vtp_password(device, params):
-    vtp_commands = []
-
-    password = params.get('vtp_password')
-    if password:
-        vtp_commands.append('no vtp password')
-
-    return vtp_commands
-
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -201,7 +172,7 @@ def main():
 
     if module.params['state'] == 'absent':
         if existing['vtp_password'] == proposed['vtp_password']:
-            command = remove_vtp_password(device, proposed)
+            command = vtp.remove_vtp_password(proposed)
             if command:
                 commands.append(command)
         else:
@@ -216,7 +187,7 @@ def main():
                 if not existing.get('domain') and not proposed.get('domain'):
                     module.fail_json(msg='Cannot set vtp password'
                                      ' before vtp domain is set')
-            command = config_vtp(device, delta)
+            command = vtp.config_vtp(delta)
             if command:
                 commands.append(command)
 
