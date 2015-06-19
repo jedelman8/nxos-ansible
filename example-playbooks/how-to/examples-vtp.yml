@@ -1,0 +1,11 @@
+---
+
+- name: vtp example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # set all three parameters
+    - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
