@@ -9,10 +9,9 @@
   tasks:
 
   # set all three parameters
-  - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+  - name: "Set all three VTP parameters"
+    nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
     register: vtp_data
-    tags: 
-      - vtp
 
   - assert:
       that: 
@@ -20,8 +19,21 @@
         - "vtp_data['final']['version'] == '1'"
         - "vtp_data['final']['vtp_password'] == 'vpass'"
 
+  # Repeat idempotent operatio
+  - name: "Set all three VTP parameters again to test idempotency"
+    nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+    register: vtp_data
+
+  - assert:
+      that: 
+        - "vtp_data['final']['domain'] == 'ntc'"
+        - "vtp_data['final']['version'] == '1'"
+        - "vtp_data['final']['vtp_password'] == 'vpass'"
+        - "vtp_data['changed'] == false"
+
   # change just version
-  - nxos_vtp: version=2 host={{ inventory_hostname }} 
+  - name: "Change just VTP version"
+    nxos_vtp: version=2 host={{ inventory_hostname }}
     register: vtp_data
 
   - assert:
@@ -31,7 +43,8 @@
         - "vtp_data['final']['vtp_password'] == 'vpass'"
 
   # no op
-  - nxos_vtp: host={{ inventory_hostname }} 
+  - name: "Don't change anything"
+    nxos_vtp: host={{ inventory_hostname }}
     register: vtp_data
 
   - assert:
@@ -41,7 +54,8 @@
         - "vtp_data['final']['vtp_password'] == 'vpass'"
 
   # change just vtp_password
-  - nxos_vtp: vtp_password=vpass2 host={{ inventory_hostname }} 
+  - name: "Change just vtp password"
+    nxos_vtp: vtp_password=vpass2 host={{ inventory_hostname }}
     register: vtp_data
 
   - assert:
@@ -51,7 +65,8 @@
         - "vtp_data['final']['vtp_password'] == 'vpass2'"
 
   # change just domain
-  - nxos_vtp: domain=mydomain host={{ inventory_hostname }} 
+  - name: "Change just vtp domain"
+    nxos_vtp: domain=mydomain host={{ inventory_hostname }}
     register: vtp_data
 
   - assert:
@@ -61,7 +76,8 @@
         - "vtp_data['final']['vtp_password'] == 'vpass2'"
 
   # remove password
-  - nxos_vtp: state=absent vtp_password=vpass2 host={{ inventory_hostname }} 
+  - name: "Remove vtp password"
+    nxos_vtp: state=absent vtp_password=vpass2 host={{ inventory_hostname }}
     register: vtp_data
 
   - assert:
@@ -70,8 +86,19 @@
         - "vtp_data['final']['version'] == '2'"
         - "vtp_data['final']['vtp_password'] != 'vpass2'"
 
+  # remove wrong password
+  - name: "Remove non-matching password. Should fail."
+    nxos_vtp: state=absent vtp_password=edcba host={{ inventory_hostname }}
+    ignore_errors: yes
+    register: fail_object
+
+  - assert:
+      that: 
+        - "fail_object['failed'] == true"
+
   # out of scope version number - should fail
-  - nxos_vtp: version=99 host={{ inventory_hostname }} 
+  - name: "Change vtp version to impossible value. Should fail."
+    nxos_vtp: version=99 host={{ inventory_hostname }}
     ignore_errors: yes
     register: fail_object
 
@@ -80,7 +107,8 @@
         - "fail_object['failed'] == true"
 
   # can't remove domain name
-  - nxos_vtp: state=absent domain=test vtp_password=vpass2 host={{ inventory_hostname }} 
+  - name: "Remove domain name. Should fail."
+    nxos_vtp: state=absent domain=test vtp_password=vpass2 host={{ inventory_hostname }}
     ignore_errors: yes
     register: fail_object
 
@@ -89,7 +117,8 @@
         - "fail_object['failed'] == true"
 
   # can't remove version
-  - nxos_vtp: state=absent version=1 vtp_password=vpass2 host={{ inventory_hostname }} 
+  - name: "Remove vtp version. Should fail."
+    nxos_vtp: state=absent version=1 vtp_password=vpass2 host={{ inventory_hostname }}
     ignore_errors: yes
     register: fail_object
 

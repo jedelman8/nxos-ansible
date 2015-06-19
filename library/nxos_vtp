@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # Copyright 2015 Michael Ben-Ami <michael@networktocode.com>
 # Network to Code, LLC
@@ -112,23 +112,25 @@ try:
     from pycsco.nxos.error import CLIError
 except ImportError as e:
     HAS_PYCSCO = False
-    
+
+
 def config_vtp(device, params):
     vtp_commands = []
-    
+
     domain = params.get('domain')
     if domain:
         vtp_commands.append('vtp domain ' + domain)
-    
+
     version = params.get('version')
     if version:
         vtp_commands.append('vtp version ' + version)
 
-    password  = params.get('vtp_password')
+    password = params.get('vtp_password')
     if password:
         vtp_commands.append('vtp password ' + password)
 
     return vtp_commands
+
 
 def remove_vtp_password(device, params):
     vtp_commands = []
@@ -138,6 +140,7 @@ def remove_vtp_password(device, params):
         vtp_commands.append('no vtp password')
 
     return vtp_commands
+
 
 def main():
     module = AnsibleModule(
@@ -159,8 +162,9 @@ def main():
     if not HAS_PYCSCO:
         module.fail_json(msg='pycsco is required for this module')
 
-    common_keys = ('state', 'host', 'username', 'password', 'protocol', 'CHECKMODE')
-    
+    common_keys = ('state', 'host', 'username', 'password',
+                   'protocol', 'CHECKMODE')
+
     auth = Auth(vendor='cisco', model='nexus')
 
     username = module.params['username'] or auth.username
@@ -168,10 +172,12 @@ def main():
 
     protocol = module.params['protocol']
     host = socket.gethostbyname(module.params['host'])
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username,
+                    password=password, protocol=protocol)
     changed = False
 
-    proposed = dict((k, v) for k, v in module.params.iteritems() if v is not None and k not in common_keys)
+    proposed = dict((k, v) for k, v in module.params.iteritems()
+                    if v is not None and k not in common_keys)
     commands = []
 
     if not nxapi_lib.feature_enabled(device, 'vtp'):
@@ -179,9 +185,14 @@ def main():
 
     if module.params['state'] == 'absent':
         if 'domain' in proposed:
-            module.fail_json(msg='To remove a domain, you must disable and re-enable the vtp feature. state=absent is not appropriate for this task')
+            module.fail_json(msg='To remove a domain,'
+                             ' you must disable and re-enable the vtp feature.\n'
+                             'state=absent is not appropriate for this task')
         if 'version' in proposed:
-            module.fail_json(msg='The version parameter is not supported when state=absent. Version can be set to \'1\' or \'2\' when state=present')
+            module.fail_json(msg='The version parameter'
+                             ' is not supported when state=absent.\n'
+                             'Version can be set'
+                             ' to "1" or "2" when state=present')
 
     try:
         existing = vtp.get_vtp_current_cfg(device)
@@ -194,19 +205,21 @@ def main():
             if command:
                 commands.append(command)
         else:
-            module.fail_json(msg='Proposed vtp password does not match current vtp password. So it cannot be removed when state=absent. \
-                If you are trying to change the vtp password, use state=present.')
+            module.fail_json(msg='Proposed vtp password does not match current vtp password.\n'
+                             'So it cannot be removed when state=absent.\n'
+                             'If you are trying to change the vtp password,'
+                             ' use state=present.')
     elif module.params['state'] == 'present':
         delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
         if delta:
             if delta.get('vtp_password'):
-                if not existing.get('domain') and not proposed.get('domain'):   
-                    module.fail_json(msg='Cannot set vtp password before vtp domain is set')
+                if not existing.get('domain') and not proposed.get('domain'):
+                    module.fail_json(msg='Cannot set vtp password'
+                                     ' before vtp domain is set')
             command = config_vtp(device, delta)
             if command:
                 commands.append(command)
 
-    new = None
     cmds = ''
     if commands:
         cmds = nxapi_lib.nested_cmd_list_to_string(commands)
@@ -216,20 +229,17 @@ def main():
             changed = True
             try:
                 device.config(cmds)
-                new = vtp.get_vtp_current_cfg(device)
             except CLIError as e:
                 module.fail_json(msg=str(e))
 
-   
     results = {}
     results['proposed'] = proposed
     results['existing'] = existing
-    results['new'] = new
     results['state'] = module.params['state']
     results['commands'] = cmds
     results['changed'] = changed
-    if new:
-        results['final'] = new
+    if changed:
+        results['final'] = vtp.get_vtp_current_cfg(device)
     else:
         results['final'] = existing
 
