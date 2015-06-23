@@ -1,0 +1,247 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Jason Edelman <jedelman8@gmail.com>
+# Network to Code, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+module: nxos_igmp_snooping
+short_description: Manages IGMP snooping global configuration
+description:
+    - Manages IGMP snooping global configuration
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - When state=default, params will be reset to a default state
+    - group_timeout also accepts "never" as an input
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    snooping:
+        description:
+            - enables/disables IGMP snooping on the switch
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    group_timeout:
+        description:
+            - Group membership timeout value for all VLANs on the device
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    link_local_grp_supp:
+        description:
+            - Global link-local groups suppression
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    optimize_mcast_flood:
+        description:
+            - Optimizes OMF on all VLANs on the device.
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    report_supp:
+        description:
+            - Global IGMPv1/IGMPv2 Report Suppression
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    v3_report_supp:
+        description:
+            - Global IGMPv3 Report Suppression and Proxy Reporting
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    state:
+        description:
+            - Manages desired state of the resource
+        required: true
+        default: present
+        choices: ['present', 'default']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http', 'https']
+        aliases: []
+'''
+EXAMPLES = '''
+# ensure igmp snooping params supported in this module are in there default state
+- nxos_igmp_snooping: state=default host={{ inventory_hostname }}
+
+# ensure following igmp snooping params are in the desired state
+- nxos_igmp_snooping:
+   group_timeout: never
+   snooping: true
+   link_local_grp_supp: false
+   optimize_mcast_flood: false
+   report_supp: true
+   v3_report_supp: true
+   host: "{{ inventory_hostname }}"
+   state: present
+
+'''
+
+import socket
+
+HAS_PYCSCO = True
+try:
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import mcast
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            snooping=dict(choices=BOOLEANS, type='bool'),
+            group_timeout=dict(type='str'),
+            link_local_grp_supp=dict(choices=BOOLEANS, type='bool'),
+            optimize_mcast_flood=dict(choices=BOOLEANS, type='bool'),
+            report_supp=dict(choices=BOOLEANS, type='bool'),
+            v3_report_supp=dict(choices=BOOLEANS, type='bool'),
+            state=dict(choices=['present', 'default'], default='present'),
+            protocol=dict(choices=['http', 'https'], default='http'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+
+    snooping = module.params['snooping']
+    link_local_grp_supp = module.params['link_local_grp_supp']
+    optimize_mcast_flood = module.params['optimize_mcast_flood']
+    report_supp = module.params['report_supp']
+    v3_report_supp = module.params['v3_report_supp']
+
+    group_timeout = module.params['group_timeout']
+
+    state = module.params['state']
+
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
+
+    changed = False
+
+    args = dict(snooping=snooping, link_local_grp_supp=link_local_grp_supp,
+                optimize_mcast_flood=optimize_mcast_flood,
+                report_supp=report_supp, v3_report_supp=v3_report_supp,
+                group_timeout=group_timeout)
+
+    proposed = dict((param, value) for (param, value) in args.iteritems()
+                    if value is not None)
+
+    existing = mcast.get_igmp_snooping(device)
+
+    commands = []
+
+    if state == 'present':
+        delta = dict(
+                    set(proposed.iteritems()).difference(existing.iteritems())
+                    )
+        if delta:
+            command = mcast.config_igmp_snooping(delta, existing)
+            if command:
+                commands.append(command)
+    elif state == 'default':
+        proposed = mcast.get_igmp_snooping_defaults()
+        delta = dict(
+                     set(proposed.iteritems()).difference(existing.iteritems())
+                    )
+        if delta:
+            command = mcast.config_igmp_snooping(delta, existing, default=True)
+            if command:
+                commands.append(command)
+
+    cmds = ''
+    if commands:
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+    results = {}
+    if cmds:
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            try:
+                device.config(cmds)
+            except CLIError as e:
+                module.fail_json(msg=str(e))
+
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        results['final'] = mcast.get_igmp_snooping(device)
+    else:
+        results['final'] = existing
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()
