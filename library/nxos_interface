@@ -373,7 +373,12 @@ def main():
     results['proposed'] = proposed
     results['existing'] = existing
     if interface not in ['svi', 'loopback', 'all', 'ethernet', 'portchannel']:
-        results['new'] = nxapi_lib.get_interface(device, e_interface)
+        if changed:
+            results['final'] = nxapi_lib.get_interface(device, e_interface)
+        else:
+            results['final'] = existing
+    else:
+        results['final'] = 'need to format changes when using keyword'
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed
