@@ -103,8 +103,9 @@ EXAMPLES = '''
 
 import socket
 
-HAS_PYCSCO = True
+
 try:
+    HAS_PYCSCO = True
     from pycsco.nxos.device import Device
     from pycsco.nxos.device import Auth
     from pycsco.nxos.utils import vtp
@@ -112,6 +113,7 @@ try:
     from pycsco.nxos.error import CLIError
 except ImportError as e:
     HAS_PYCSCO = False
+
 
 def main():
     module = AnsibleModule(
