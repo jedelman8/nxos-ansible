@@ -1,0 +1,226 @@
+#!/usr/bin/python
+
+# Copyright 2015 Michael Ben-Ami <michael@networktocode.com>
+# Network to Code, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_static_routes
+short_description: Manages static route configuration
+description:
+    - Manages static route configuration
+author: Michael Ben-Ami
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - If no vrf is supplied, vrf is set to "default"
+    - If state=absent, the route will be removed, regardless of the non-required parameters.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    prefix:
+        description:
+            - Destination prefix of static route
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    next_hop:
+        description:
+            - Next hop address or interface of static route
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    vrf:
+        description:
+            - VRF for static route
+        required: false
+        default: 'default'
+        choices: []
+        aliases: []
+    tag:
+        description:
+            - Route tag value (numeric).
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    route_name:
+        description:
+            - Name of the route. Used with the "name" parameter on the CLI.
+        required: false
+        default: ''
+        choices: []
+        aliases: []
+    pref:
+        description:
+            - Preference or administrative difference of route (range: 1-255)
+        required: false
+        default: ''
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Manage the state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http','https']
+        aliases: []
+'''
+EXAMPLES = '''
+# Static route with tag and preference set
+- nxos_static_routes: prefix=1.1.1.0/24 next_hop=2.2.2.2 tag=90 pref=80 host={{ inventory_hostname }}
+'''
+
+import socket
+
+try:
+    HAS_PYCSCO = True
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import routing
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            prefix=dict(required=True, type='str'),
+            next_hop=dict(required=True, type='str'),
+            vrf=dict(type='str', default='default'),
+            tag=dict(type='str'),
+            route_name=dict(type='str'),
+            pref=dict(type='str'),
+            state=dict(choices=['absent', 'present'],
+                       default='present'),
+            host=dict(required=True),
+            username=dict(),
+            password=dict(),
+            protocol=dict(choices=['http', 'https'],
+                          default='http')
+        ),
+        supports_check_mode=True
+    )
+
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    common_keys = ('state', 'host', 'username', 'password',
+                   'protocol', 'CHECKMODE')
+
+    auth = Auth(vendor='cisco', model='nexus')
+
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+    device = Device(ip=host, username=username,
+                    password=password, protocol=protocol)
+    changed = False
+
+    proposed = dict((k, v) for k, v in module.params.iteritems()
+                    if v is not None and k not in common_keys)
+    commands = []
+
+    vrf = module.params.get('vrf')
+    prefix = routing.normalize_prefix(module.params.get('prefix'))
+    next_hop = module.params.get('next_hop')
+    try:
+        existing = routing.get_static_routes(device, vrf, prefix, next_hop)
+    except CLIError as e:
+        module.fail_json(msg=str(e))
+
+    # make sure the proposed prefix is set to the "normalized" network prefix
+    proposed['prefix'] = prefix
+
+    if module.params['state'] == 'present':
+        delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
+        if delta:
+            command = routing.config_static_route(vrf, prefix, next_hop, delta, existing)
+            if command:
+                commands.append(command)
+    elif module.params['state'] == 'absent':
+        if existing:
+            command = routing.remove_static_route(vrf, prefix, next_hop)
+            if command:
+                commands.append(command)
+
+    cmds = ''
+    if commands:
+        cmds = nxapi_lib.nested_cmd_list_to_string(commands)
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            try:
+                device.config(cmds)
+            except CLIError as e:
+                module.fail_json(msg=str(e))
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['state'] = module.params['state']
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        results['final'] = routing.get_static_routes(device, vrf, prefix, next_hop)
+    else:
+        results['final'] = existing
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

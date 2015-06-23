@@ -1,0 +1,11 @@
+---
+
+- name: static route example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # Static route with name, alternative VRF
+    - nxos_static_routes: prefix=1.1.1.0/24 next_hop=2.2.2.2 tag=90 pref=80 host={{ inventory_hostname }}
