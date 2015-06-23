@@ -1,0 +1,73 @@
+---
+
+  - name: test playbook for nxos_igmp
+    hosts: all
+    gather_facts: no
+    connection: local
+
+    tasks:
+
+       - name: ensure PIM is enabled (not technically required)
+         nxos_feature:  feature=pim state=enabled host={{ inventory_hostname }}
+
+       - name: ensure routes are removed when restarting igmp
+         nxos_igmp: flush_routes=true host={{ inventory_hostname }}
+         register: igmp_data
+
+       - name: Test 1 - Assert flush_routes = true
+         assert:
+           that:
+             -   igmp_data.final.flush_routes == true
+
+       - name: verify idempotency ensure routes are removed when restarting igmp
+         nxos_igmp: flush_routes=true host={{ inventory_hostname }}
+         register: igmp_data
+
+       - name: Test 2 - Assert flush_routes = true
+         assert:
+           that:
+             -   igmp_data.changed == false
+             -   igmp_data.final.flush_routes == true
+
+       - name: ensure routes are removed and enforce router alert options
+         nxos_igmp: flush_routes=true enforce_rtr_alert=true host={{ inventory_hostname }}
+         register: igmp_data
+
+       - name: Test 3 - Assert flush_routes and enforce_rtr_alert both == true
+         assert:
+           that:
+             -   igmp_data.final.flush_routes == true
+             -   igmp_data.final.enforce_rtr_alert == true
+
+       - name: ensure defaults are set
+         nxos_igmp: state=default host={{ inventory_hostname }}
+         register: igmp_data
+
+
+       - name: Test 4 - Default (set false) both params
+         assert:
+           that:
+             -   igmp_data.final.flush_routes == false
+             -   igmp_data.final.enforce_rtr_alert == false
+
+       - name: restart igmp process
+         nxos_igmp: state=present restart=true host={{ inventory_hostname }}
+         register: igmp_data
+
+
+       - name: Test 5 - ensure process was restarted
+         assert:
+           that:
+             -   igmp_data.final.restart == true
+
+       - name: ensure both params are set to false
+         nxos_igmp: flush_routes=false enforce_rtr_alert=false host={{ inventory_hostname }}
+         register: igmp_data
+
+
+       - name: Test 6 - Verify idempotency
+         assert:
+           that:
+             -   igmp_data.final.flush_routes == false
+             -   igmp_data.final.enforce_rtr_alert == false
+
