@@ -141,8 +141,8 @@ def main():
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -167,8 +167,8 @@ def main():
     authentication = module.params['auth']
     state = module.params['state']
 
-
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     if authentication and pwd is None:
         module.fail_json(msg='pwd is required when auth is set')
@@ -177,9 +177,7 @@ def main():
         module.fail_json(msg='privacy pwd is required when trying to encrypt')
 
     if group and group not in snmp.get_snmp_groups(device):
-         module.fail_json(msg='group not configured yet on switch')
-
-
+        module.fail_json(msg='group not configured yet on switch')
 
     existing = snmp.get_snmp_user(device, user)
 
@@ -221,7 +219,7 @@ def main():
             commands.append(command)
 
         elif existing:
-            # if any of these parameters are not null, a change will be required
+            # if any of these parameters are not null, a change will be req'd
             # since passwords are not idempotent
             # pwd, privacy
 
@@ -261,6 +259,7 @@ def main():
         else:
             changed = True
             device.config(cmds)
+            results['new'] = snmp.get_snmp_user(device, user)
 
     if store:
         existing['group'] = store
@@ -268,7 +267,6 @@ def main():
     results = {}
     results['proposed'] = proposed
     results['existing'] = existing
-    results['new'] = snmp.get_snmp_user(device, user)
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed

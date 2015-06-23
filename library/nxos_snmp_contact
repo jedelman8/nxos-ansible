@@ -103,8 +103,8 @@ def main():
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -123,14 +123,14 @@ def main():
     contact = module.params['contact']
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     existing = snmp.get_snmp_contact(device)
 
     changed = False
 
     commands = []
-
 
     if state == 'absent':
         if existing:
@@ -149,11 +149,11 @@ def main():
         else:
             changed = True
             device.config(cmds)
+            results['new'] = snmp.get_snmp_contact(device)
 
     results = {}
     results['proposed'] = contact
     results['existing'] = existing
-    results['new'] = snmp.get_snmp_contact(device)
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed

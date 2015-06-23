@@ -103,8 +103,8 @@ def main():
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
-            username=dict(default='cisco'),
-            password=dict(default='!cisco123!'),
+            username=dict(),
+            password=dict(),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),
@@ -123,14 +123,14 @@ def main():
     location = module.params['location']
     state = module.params['state']
 
-    device = Device(ip=host, username=username, password=password, protocol=protocol)
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
 
     existing = snmp.get_snmp_location(device)
 
     changed = False
 
     commands = []
-
 
     if state == 'absent':
         if existing:
