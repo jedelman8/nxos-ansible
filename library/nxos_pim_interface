@@ -50,6 +50,13 @@ options:
         default: null
         choices: []
         aliases: []
+    sparse:
+        description:
+            - enable/disable sparse-mode on the interface
+        required: true
+        default: true
+        choices: ['true', 'false']
+        aliases: []
     hello_auth_key:
         description:
             - auth for hellos on this interface
@@ -198,6 +205,8 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(required=True),
+            sparse=dict(choices=BOOLEANS,
+                        type='bool', default=True),
             dr_prio=dict(),
             hello_auth_key=dict(),
             hello_interval=dict(type='int'),
@@ -233,6 +242,7 @@ def main():
 
     state = module.params['state']
 
+    sparse = module.params['sparse']
     interface = module.params['name']
     jp_type_in = module.params['jp_type_in']
     jp_type_out = module.params['jp_type_out']
@@ -274,11 +284,15 @@ def main():
 
     args = dict((k, v) for k, v in module.params.iteritems() if k not in OUT)
 
-    proposed = dict((param, value) for (param, value) in args.iteritems() if value is not None)
+    proposed = dict((param, value) for (param, value) in args.iteritems()
+                    if value is not None)
+
+    '''
     CANNOT_ABSENT = ['dr_prio', 'hello_interval',
                      'hello_auth_key', 'jp_policy_out', 'jp_policy_in',
                      'jp_type_out', 'jp_type_in', 'border', 'neighbor_type',
                      'neighbor_policy']
+    '''
 
     if hello_interval:
         proposed['hello_interval'] = str(proposed['hello_interval'] * 1000)
@@ -286,8 +300,8 @@ def main():
     delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
 
     if state == 'present':
-        if not existing:
-            commands.append(['ip pim sparse-mode'])
+        # if not sparse:
+        #    commands.append(['ip pim sparse-mode'])
         if delta:
             command = mcast.config_pim_interface(delta, existing,
                                                  jp_bidir, isauth)

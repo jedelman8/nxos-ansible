@@ -309,6 +309,7 @@ def main():
 
         existing = nxapi_lib.get_interface(device, e_interface)
 
+
         # Additional params being returned we don't need right now,
         # so we are removing them
         # if they aren't defined in the get_intf_args() method
