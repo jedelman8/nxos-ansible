@@ -8,4 +8,4 @@
   tasks:
 
     # Basic NTP authentication configuration
-    - nxos_ntp_auth: key_id=32 md5string=hello auth_type=text host={{ inventory_hostname }}
+    - nxos_ntp_auth: state=present key_id=32 md5string=hello trusted_key=true auth_type=encrypt host={{ inventory_hostname }}

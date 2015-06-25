@@ -1,0 +1,54 @@
+---
+
+- name: ntp authentication example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # Basic NTP authentication configuration
+    - name: "Basic NTP authentication configuration"
+      nxos_ntp_auth: state=present key_id=32 md5string=hello trusted_key=true auth_type=encrypt authentication=on host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.key_id == '32'"
+        - "returned.final.md5string == 'hello'"
+        - "returned.final.trusted_key == 'true'"
+        - "returned.final.authentication == 'on'"
+
+    # Turn off trusted key
+    - name: "Turn off trusted key"
+      nxos_ntp_auth: state=present key_id=32 md5string=hello auth_type=encrypt trusted_key=false host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.key_id == '32'"
+        - "returned.final.md5string == 'hello'"
+        - "returned.final.trusted_key == 'false'"
+        - "returned.final.authentication == 'on'"
+
+    # Turn off authentication
+    - name: "Turn off authentication"
+      nxos_ntp_auth: key_id=32 md5string=hello auth_type=encrypt authentication=off host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.key_id == '32'"
+        - "returned.final.md5string == 'hello'"
+        - "returned.final.trusted_key == 'false'"
+        - "returned.final.authentication == 'off'"
+
+    # Remove key with state=absent
+    - name: "Remove key with state=absent"
+      nxos_ntp_auth: state=absent key_id=32 md5string=hello auth_type=encrypt host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "'key_id' not in returned.final"
+        - "'md5string' not in returned.final"

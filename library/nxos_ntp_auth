@@ -30,8 +30,10 @@ requirements:
 notes:
     - NTP authentication configuration changes are not idempotent.
       If state=present, the configuration will be updated on the device.
-    - If state=absent, the module will attempt to remove NTP authentication configuration.
-      If a matching configuration isn't found on the device, the module will fail. 
+    - If state=absent, the moudle will attempt to remove the given key configuration.
+      If a matching key configuration isn't found on the device, the module will fail.
+    - If state=absent and authentication=on, authentication will be turned off.
+    - If state=absent and authentication=off, authentication will be turned on.
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
       as it will clean up the each task in the playbook by not requiring
@@ -53,12 +55,27 @@ options:
         choices: []
         aliases: []
     auth_type:
-        description: 
+        description:
             - Whether the given md5string is in cleartext or has been encrypted.
               If in cleartext, the device will encrypt it before storing it.
         required: false
         default: 'text'
         choices: ['text', 'encrypt']
+        aliases: []
+    trusted_key:
+        description:
+            - Whether the given key is required to be supplied by a time source
+            for the device to synchronize to the time source.
+        required: false
+        default: 'false'
+        choices: ['true', 'false']
+        aliases: []
+    authentication:
+        description:
+            - Turns NTP authenication on or off.
+        required: false
+        default: null
+        choices: ['on', 'off']
         aliases: []
     state:
         description:
@@ -121,6 +138,8 @@ def main():
             key_id=dict(required=True, type='str'),
             md5string=dict(required=True, type='str'),
             auth_type=dict(choices=['text', 'encrypt'], default='text'),
+            trusted_key=dict(choices=['true', 'false'], default='false'),
+            authentication=dict(choices=['on', 'off']),
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
@@ -156,21 +175,28 @@ def main():
     key_id = proposed.get('key_id')
     md5string = proposed.get('md5string')
     auth_type = proposed.get('auth_type')
+    trusted_key = proposed.get('trusted_key')
+    authentication = proposed.get('authentication')
 
     try:
-        existing = ntp.get_ntp_auth_key(device, key_id)
+        existing = ntp.get_ntp_auth_info(device, key_id)
     except CLIError as e:
         module.fail_json(msg=str(e))
 
+    delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
     if module.params['state'] == 'present':
-        delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
         if delta:
-            command = ntp.set_ntp_auth_key(key_id, md5string, auth_type)
+            command = ntp.set_ntp_auth_key(
+                key_id, md5string, auth_type, trusted_key, delta.get('authentication'))
             if command:
                 commands.append(command)
     elif module.params['state'] == 'absent':
         if existing:
-            command = ntp.remove_ntp_auth_key(key_id, md5string, auth_type)
+            auth_toggle = None
+            if authentication == existing.get('authentication'):
+                auth_toggle = authentication
+            command = ntp.remove_ntp_auth_key(
+                key_id, md5string, auth_type, trusted_key, auth_toggle)
             if command:
                 commands.append(command)
 
@@ -184,7 +210,7 @@ def main():
             try:
                 device.config(cmds)
             except CLIError as e:
-                module.fail_json(msg=str(e))
+                module.fail_json(msg=str(e) + ": " + cmds)
 
     results = {}
     results['proposed'] = proposed
@@ -193,7 +219,7 @@ def main():
     results['commands'] = cmds
     results['changed'] = changed
     if changed:
-        results['final'] = ntp.get_ntp_auth_key(device, key_id)
+        results['final'] = ntp.get_ntp_auth_info(device, key_id)
     else:
         results['final'] = existing
 
