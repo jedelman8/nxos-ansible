@@ -1,0 +1,278 @@
+#!/usr/bin/python
+
+# Copyright 2015 Michael Ben-Ami <michael@networktocode.com>
+# Network to Code, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_ntp
+short_description: Manages core NTP configuration
+description:
+    - Manages core NTP configuration
+author: Michael Ben-Ami
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - At most one of server or peer parameters may be given.
+    - At most one of source_addr and source_int parameters may be given.
+    - When state=absent, a given NTP server or peer will be removed,
+      regardless of other supplied parameters.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    server:
+        description:
+            - Network address of NTP server
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    peer:
+        description:
+            - Network address of NTP peer
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    key_id:
+        description:
+            - Authentication key identifier to use with given NTP server or peer
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    prefer:
+        description:
+            - Makes given NTP server or peer the preferred NTP server or peer for the device
+        required: false
+        default: null
+        choices: ['enabled', 'disabled']
+        aliases: []
+    vrf_name:
+        description:
+            - Makes the device communicate with the given NTP server or peer over a specific VRF
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    source_addr:
+        description:
+            - Local source address from which NTP messages are sent
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    source_int:
+        description:
+            - Local source interface from which NTP messages are sent
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Manage the state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http','https']
+        aliases: []
+'''
+EXAMPLES = '''
+# Set NTP Server with parameters
+- nxos_ntp: server=1.2.3.4 key_id=32 prefer=enabled host={{ inventory_hostname }}
+'''
+
+import socket
+
+try:
+    HAS_PYCSCO = True
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import ntp
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            server=dict(type='str'),
+            peer=dict(type='str'),
+            key_id=dict(type='str'),
+            prefer=dict(type='str',
+                        choices=['enabled', 'disabled']),
+            vrf_name=dict(type='str'),
+            source_addr=dict(type='str'),
+            source_int=dict(type='str'),
+            state=dict(choices=['absent', 'present'],
+                       default='present'),
+            host=dict(required=True),
+            username=dict(),
+            password=dict(),
+            protocol=dict(choices=['http', 'https'],
+                          default='http')
+        ),
+        supports_check_mode=True
+    )
+
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    auth = Auth(vendor='cisco', model='nexus')
+
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+    device = Device(ip=host, username=username,
+                    password=password, protocol=protocol)
+    changed = False
+
+    commands = []
+
+    if module.params['server'] and module.params['peer']:
+        module.fail_json(
+            msg='At most one of peer and server params is may be given')
+
+    if module.params['key_id']\
+        or module.params['vrf_name']\
+            or module.params['prefer']:
+        if not module.params['server'] and not module.params['peer']:
+            module.fail_json(
+                msg='Please supply the server or peer parameter')
+
+    if module.params['source_addr'] and module.params['source_int']:
+        module.fail_json(
+            msg='At most one of source_addr and source_int parameters may be given')
+
+    proposed = {}
+    if module.params['server']:
+        proposed['serv_peer'] = 'server'
+        proposed['address'] = module.params['server']
+    elif module.params['peer']:
+        proposed['serv_peer'] = 'peer'
+        proposed['address'] = module.params['peer']
+    proposed['key_id'] = module.params['key_id']
+    proposed['prefer'] = module.params['prefer']
+    proposed['vrf_name'] = module.params['vrf_name']
+
+    proposed = dict((k, v) for k, v in proposed.iteritems() if v)
+
+    if module.params['source_addr']:
+        proposed['source_type'] = 'source'
+        proposed['source_addr_int'] = module.params['source_addr']
+    elif module.params['source_int']:
+        proposed['source_type'] = 'source-interface'
+        proposed['source_addr_int'] = module.params['source_int'].lower()
+
+    try:
+        existing = ntp.get_ntp_existing(
+            device, proposed.get('address'), proposed.get('serv_peer'))
+        existing_copy = {k: existing.get(k) for k in existing
+                         if k != 'serv_peer_list'}
+    except CLIError as e:
+        module.fail_json(msg=str(e))
+
+    if module.params['state'] == 'present':
+        delta = dict(set(proposed.iteritems()).difference(
+            existing_copy.iteritems()))
+        if delta:
+            command = ntp.config_ntp(delta, existing)
+            if command:
+                commands.append(command)
+    elif module.params['state'] == 'absent':
+        if existing.get('serv_peer') and existing.get('address'):
+            command = ntp.disable_ntp_server_peer(
+                existing['serv_peer'], existing['address'])
+            if command:
+                commands.append([command])
+        existing_source_type = existing.get('source_type')
+        existing_source_addr_int = existing.get('source_addr_int')
+        proposed_source_type = proposed.get('source_type')
+        proposed_source_addr_int = proposed.get('source_addr_int')
+        if proposed_source_type:
+            if proposed_source_type == existing_source_type:
+                if proposed_source_addr_int == existing_source_addr_int:
+                    command = ntp.disable_ntp_source(
+                        existing_source_type, existing_source_addr_int)
+                    if command:
+                        commands.append([command])
+
+    cmds = ''
+    if commands:
+        cmds = nxapi_lib.nested_cmd_list_to_string(commands)
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            try:
+                device.config(cmds)
+            except CLIError as e:
+                module.fail_json(msg=str(e) + ": " + cmds)
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['state'] = module.params['state']
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        results['final'] = ntp.get_ntp_existing(
+            device, proposed.get('address'), proposed.get('serv_peer'))
+    else:
+        results['final'] = existing
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

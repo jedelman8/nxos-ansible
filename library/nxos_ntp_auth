@@ -18,10 +18,10 @@
 DOCUMENTATION = '''
 ---
 
-module: nxos_static_routes
-short_description: Manages static route configuration
+module: nxos_ntp_auth
+short_description: Manages NTP authentication
 description:
-    - Manages static route configuration
+    - Manages NTP authentication
 author: Michael Ben-Ami
 requirements:
     - NX-API 1.0

@@ -1,0 +1,11 @@
+---
+
+- name: ntp example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+# Set NTP Server with parameters
+  - nxos_ntp: server=1.2.3.4 key_id=32 prefer=enabled host={{ inventory_hostname }}
