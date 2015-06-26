@@ -1,0 +1,11 @@
+---
+
+- name: ntp options example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # Basic NTP options configuration
+    - nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}

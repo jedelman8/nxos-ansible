@@ -1,0 +1,225 @@
+#!/usr/bin/python
+
+# Copyright 2015 Michael Ben-Ami <michael@networktocode.com>
+# Network to Code, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_ntp_options
+short_description: Manages NTP options
+description:
+    - Manages NTP options, e.g. authoritative server and logging
+author: Michael Ben-Ami
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+*********
+    - If the stratum parameter is supplied,
+      then the master parameter must also be supplied.
+    - When state=absent, the stratum parameter is ignored.
+    - When state=absent, boolean parameters are flipped,
+      e.g. master=true will disable the authoritative server.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    master:
+        description:
+            - Sets whether the device is an authoritative NTP server
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    stratrum:
+        description:
+            - If master=true, an optional stratum can be supplied (1-15).
+              The device default is 8.
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    logging:
+        description:
+            - Sets whether NTP logging is enabled on the device.
+        required: false
+        default: null
+        choices: ['true', 'false']
+        aliases: []
+    state:
+        description:
+            - Manage the state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http','https']
+        aliases: []
+'''
+EXAMPLES = '''
+# Basic NTP options configuration
+- nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}
+'''
+
+import socket
+
+try:
+    HAS_PYCSCO = True
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import ntp
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            master=dict(choices=['true', 'false'], type='str'),
+            stratum=dict(type='str'),
+            logging=dict(choices=['true', 'false']),
+            state=dict(choices=['absent', 'present'],
+                       default='present'),
+            host=dict(required=True),
+            username=dict(),
+            password=dict(),
+            protocol=dict(choices=['http', 'https'],
+                          default='http')
+        ),
+        supports_check_mode=True
+    )
+
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    common_keys = ('state', 'host', 'username', 'password',
+                   'protocol', 'CHECKMODE')
+
+    auth = Auth(vendor='cisco', model='nexus')
+
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+    device = Device(ip=host, username=username,
+                    password=password, protocol=protocol)
+    changed = False
+
+    proposed = dict((k, v) for k, v in module.params.iteritems()
+                    if v is not None and k not in common_keys)
+    commands = []
+
+    master = proposed.get('master')
+    stratum = proposed.get('stratum')
+
+    if stratum:
+        if not master:
+            module.fail_json(
+                msg='The master param must be supplied when stratum is supplied')
+        try:
+            strat_int = int(stratum)
+            if strat_int < 1 or strat_int > 15:
+                raise ValueError
+        except ValueError:
+            module.fail_json(msg='Stratum must be an integer between 1 and 15')
+
+    if master == 'false':
+        proposed['stratum'] = None
+        stratum = None
+
+    try:
+        existing = ntp.get_ntp_options(device)
+    except CLIError as e:
+        module.fail_json(msg=str(e))
+
+    delta = dict(set(proposed.iteritems()).difference(existing.iteritems()))
+    delta_stratum = delta.get('stratum')
+    if delta_stratum:
+        delta['master'] = 'true'
+    if module.params['state'] == 'present':
+        if delta:
+            command = ntp.config_ntp_options(delta)
+            if command:
+                commands.append(command)
+    elif module.params['state'] == 'absent':
+        if existing:
+            isection = dict(set(proposed.iteritems()).intersection(
+                existing.iteritems()))
+            command = ntp.config_ntp_options(isection, flip=True)
+            if command:
+                commands.append(command)
+
+    cmds = ''
+    if commands:
+        cmds = nxapi_lib.nested_cmd_list_to_string(commands)
+        if module.check_mode:
+            module.exit_json(changed=True, commands=cmds)
+        else:
+            changed = True
+            try:
+                device.config(cmds)
+            except CLIError as e:
+                module.fail_json(msg=str(e) + ": " + cmds)
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['state'] = module.params['state']
+    results['delta'] = delta
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        results['final'] = ntp.get_ntp_options(device)
+    else:
+        results['final'] = existing
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()
