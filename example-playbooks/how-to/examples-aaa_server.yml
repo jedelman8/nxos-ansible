@@ -1,0 +1,11 @@
+---
+
+- name: aaa server example
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+# 
+  - nxos_aaa_server: state=default global_key=yes server_type=radius directed_request=disabled timeout=5 deadtime=5 host={{ inventory_hostname }}
