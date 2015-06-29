@@ -1,0 +1,69 @@
+---
+
+  - name: test playbook for nxos_acl_interface
+    hosts: n9396-2.networktocode.com
+    connection: local
+    gather_facts: no
+
+    tasks:
+
+      - name: prep an ACL
+        nxos_acl:  name=MYACL seq=10 action=permit proto=tcp src=1.1.1.1/32 src_port_op=eq src_port1=80 dest=any host={{ inventory_hostname }}
+
+      - name: apply ACL
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=egress state=present host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 1
+        assert:
+          that:
+            - data.final.interface == 'ethernet1/32'
+            - data.final.name == 'MYACL'
+            - data.final.direction == 'egress'
+
+      - name: verify idempotency
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=ingress state=present host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 2
+        assert:
+          that:
+            - data.changed == false
+
+      - name: apply ACL - ingress
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=ingress state=present host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 3
+        assert:
+          that:
+            - data.final.interface == 'ethernet1/32'
+            - data.final.name == 'MYACL'
+            - data.final.direction == 'ingress'
+
+      - name: verify idempotency
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=ingress state=present host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 4
+        assert:
+          that:
+            - data.changed == false
+
+      - name: remove ingress from interface
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=ingress state=absent host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 5
+        assert:
+          that:
+            - data.changed == true
+
+      - name: remove egress from interface
+        nxos_acl_interface:  name=MYACL interface=Ethernet1/32 direction=egress state=absent host={{ inventory_hostname }}
+        register: data
+
+      - name: Test 6
+        assert:
+          that:
+            - data.changed == true

@@ -1,0 +1,487 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Jason Edelman <jedelman8@gmail.com>
+# Network to Code, LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_acl
+short_description: Manages access list entries for ACLs
+description:
+    - Manages access list entries for ACLs
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - state=absent removes the ACE if it exists
+    - state=delete_acl deleted the ACL if it exists
+    - for idempotency, use port numbers for the src/dest port
+      params (src_port1, etc.) and names for the well defined protocols
+      for the proto param
+    - while this module is idempotent in that if the ace as presented in the
+      task is identical to the one on the switch, no changes will be made. If
+      there is any difference, what is in Ansible will be pushed (configured
+      options will be overridden).  This is to improve security, but at the
+      same time remember an ACE is removed, then re-added, so if there is a
+      change, the new ACE will be exacty what params you are sending to the
+      module.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    seq:
+        description:
+            - sequence number of the entry (ACE)
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    name:
+        description:
+            - Case sensitive name of the access list (ACL)
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    action:
+        description:
+            - action of the ACE
+        required: true
+        default: null
+        choices: ['permit', 'deny', 'remark']
+        aliases: []
+    remark:
+        description:
+            - If action is set to remark, this is the description
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    proto:
+        description:
+            - port number or protocol (as supported by the switch)
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    src:
+        description:
+            - src ip and mask using IP/MASK notation and supports keyword 'any'
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    src_port_op:
+        description:
+            - src port operands such as eq, neq, gt, lt, range
+        required: false
+        default: null
+        choices: ['any', 'eq', 'gt', 'lt', 'neq', 'range']
+        aliases: []
+    src_port1:
+        description:
+            - port/protocol and also first (lower) port when using range
+              operand
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    src_port2:
+        description:
+            - second (end) port when using range operand
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    dest:
+        description:
+            - dest ip and mask using IP/MASK notation and supports the
+              keyword 'any'
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    dest_port_op:
+        description:
+            - dest port operands such as eq, neq, gt, lt, range
+        required: false
+        default: null
+        choices: ['any', 'eq', 'gt', 'lt', 'neq', 'range']
+        aliases: []
+    dest_port1:
+        description:
+            - port/protocol and also first (lower) port when using range
+              operand
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    dest_port2:
+        description:
+            - second (end) port when using range operand
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    log:
+        description:
+            - Log matches against this entry
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    urg:
+        description:
+            - Match on the URG bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    ack:
+        description:
+            - Match on the ACK bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    psh:
+        description:
+            - Match on the PSH bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    rst:
+        description:
+            - Match on the RST bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    syn:
+        description:
+            - Match on the SYN bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    fin:
+        description:
+            - Match on the FIN bit
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    established:
+        description:
+            - Match established connections
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    fragments:
+        description:
+            - Check non-initial fragments
+        required: false
+        default: null
+        choices: ['enable']
+        aliases: []
+    time-range:
+        description:
+            - Name of time-range to apply
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    precedence:
+        description:
+            - Match packets with given precedence
+        required: false
+        default: null
+        choices: ['critical', 'flash', 'flash-override', 'immediate',
+                  'internet', 'network', 'priority', 'routine']
+        aliases: []
+    dscp:
+        description:
+            - Match packets with given dscp value
+        required: false
+        default: null
+        choices: ['af11, 'af12, 'af13, 'af21', 'af22', 'af23','af31','af32',
+                  'af33', 'af41', 'af42', 'af43', 'cs1', 'cs2', 'cs3', 'cs4',
+                  'cs5', 'cs6', 'cs7', 'default', 'ef']
+        aliases: []
+    state:
+        description:
+            - Specify desired state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http', 'https']
+        aliases: []
+'''
+
+EXAMPLES = '''
+
+
+'''
+
+import socket
+
+HAS_PYCSCO = True
+try:
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import security
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            seq=dict(required=False, type='str'),
+            name=dict(required=False),
+            action=dict(required=False, choices=['remark', 'permit', 'deny']),
+            remark=dict(requried=False),
+            proto=dict(required=False, type='str'),
+            src=dict(required=False),
+            src_port_op=dict(required=False),
+            src_port1=dict(required=False, type='str'),
+            src_port2=dict(required=False, type='str'),
+            dest=dict(required=False),
+            dest_port_op=dict(required=False),
+            dest_port1=dict(required=False, type='str'),
+            dest_port2=dict(required=False, type='str'),
+            log=dict(required=False, choices=['enable']),
+            urg=dict(required=False, choices=['enable']),
+            ack=dict(required=False, choices=['enable']),
+            psh=dict(required=False, choices=['enable']),
+            rst=dict(required=False, choices=['enable']),
+            syn=dict(required=False, choices=['enable']),
+            fragments=dict(required=False, choices=['enable']),
+            fin=dict(required=False, choices=['enable']),
+            established=dict(required=False, choices=['enable']),
+            time_range=dict(required=False),
+            precedence=dict(required=False, choices=['critical', 'flash',
+                                                     'flash-override',
+                                                     'immediate', 'internet',
+                                                     'network', 'priority',
+                                                     'routine']),
+            dscp=dict(required=False, choices=['af11', 'af12', 'af13', 'af21',
+                                               'af22', 'af23', 'af31', 'af32',
+                                               'af33', 'af41', 'af42', 'af43',
+                                               'cs1', 'cs2', 'cs3', 'cs4',
+                                               'cs5', 'cs6', 'cs7', 'default',
+                                               'ef']),
+            state=dict(choices=['absent', 'present', 'delete_acl'],
+                       default='present'),
+            protocol=dict(choices=['http', 'https'], default='http'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    state = module.params['state']
+    action = module.params['action']
+    remark = module.params['remark']
+
+    if action == 'remark' and not remark:
+        module.fail_json(msg='when state is action, remark param is also '
+                         'required')
+
+    REQUIRED = ['seq', 'name', 'action', 'proto', 'src', 'dest']
+    ABSENT = ['name', 'seq']
+    if state == 'present':
+        if action and remark:
+            pass
+        else:
+            for each in REQUIRED:
+                if module.params[each] is None:
+                    module.fail_json(msg="req'd params when state is present:",
+                                     params=REQUIRED)
+    elif state == 'absent':
+        for each in ABSENT:
+            if module.params[each] is None:
+                module.fail_json(msg='require params when state is absent',
+                                 params=ABSENT)
+    elif state == 'delete_acl':
+        if module.params['name'] is None:
+            module.fail_json(msg="param name req'd when state is delete_acl")
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+
+    dscp = module.params['dscp']
+    precedence = module.params['precedence']
+    if dscp and precedence:
+        module.fail_json(msg='only one of the params dscp/precedence '
+                         'are allowed')
+
+    seq = module.params['seq']
+    name = module.params['name']
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
+
+    OPTIONS_NAMES = ['log', 'urg', 'ack', 'psh', 'rst', 'syn', 'fin',
+                     'established', 'dscp', 'precedence', 'fragments',
+                     'time_range']
+
+    CORE = ['seq', 'name', 'action', 'proto', 'src', 'src_port_op',
+            'src_port1', 'src_port2', 'dest', 'dest_port_op',
+            'dest_port1', 'dest_port2', 'remark']
+
+    proposed_core = dict((param, value) for (param,
+                                             value) in
+                         module.params.iteritems()
+                         if param in CORE and value is not None)
+
+    proposed_options = dict((param, value) for (param,
+                                                value) in
+                            module.params.iteritems()
+                            if param in OPTIONS_NAMES and value is not None)
+    proposed = {}
+    proposed.update(proposed_core)
+    proposed.update(proposed_options)
+
+    existing_options = {}
+
+    acl_name = module.params['name']
+    seq = module.params['seq']
+
+    # getting existing existing_core=dict, acl=list, seq=list
+    existing_core, acl, seqs = security.get_acl(device, acl_name, seq)
+    if existing_core:
+        existing_options = existing_core.get('options')
+        existing_core.pop('options')
+
+    changed = False
+
+    cmds = ''
+    commands = []
+    delta_core = {}
+    delta_options = {}
+    if not existing_core.get('remark'):
+        # module.exit_json(aaa=existing_core)
+        delta_core = dict(
+            set(proposed_core.iteritems()).difference(
+                existing_core.iteritems())
+            )
+        delta_options = dict(
+            set(proposed_options.iteritems()).difference(
+                existing_options.iteritems())
+        )
+
+    if state == 'present':
+        if delta_core or delta_options:
+            if existing_core:  # if the ace exists already
+                commands.append(['no ' + seq])
+            if delta_options:
+                myacl_str = security.config_core_acl(proposed_core)
+                myacl_str += ' ' + security.config_acl_options(
+                    proposed_options
+                    )
+            else:
+                myacl_str = security.config_core_acl(proposed_core)
+            command = [myacl_str]
+            commands.append(command)
+    elif state == 'absent':
+        if existing_core:
+            commands.append(['no ' + seq])
+    elif state == 'delete_acl':
+        if acl:
+            commands.append(['no ip access-list ' + name])
+
+    if commands:
+        if state in ['present', 'absent']:
+            preface = ['ip access-list ' + name]
+            commands.insert(0, preface)
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+        if cmds:
+            if module.check_mode:
+                module.exit_json(changed=True, commands=cmds)
+            else:
+                changed = True
+                try:
+                    device.config(cmds)
+                except CLIError as e:
+                    module.fail_json(msg=str(e))
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing_core
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        existing_core, acl, seqs = security.get_acl(device, acl_name, seq)
+        if existing_core.get('options'):
+            existing_core.update(existing_core['options'])
+            existing_core.pop('options')
+        results['final'] = existing_core
+        results['final_acl'] = acl
+    else:
+        existing_core.update(existing_options)
+        results['final'] = existing_core
+        results['final_acl'] = acl
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

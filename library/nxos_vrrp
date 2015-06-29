@@ -1,0 +1,250 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Jason Edelman <jedelman8@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_vrrp
+short_description: Manages VRRP configuration on NX-API enabled devices
+description:
+    - Manages VRRP configuration on NX-API enabled devices
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - VRRP feature needs to be enabled first on the system
+    - SVIs must exist before using this module
+    - Interface must be a L3 port before using this module
+    - state=absent removes the vrrp group if it exists on the device
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    group:
+        description:
+            - vrrp group number
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    interface:
+        description:
+            - Full name of interface that is being managed for vrrp
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    priority:
+        description:
+            - vrrp priority
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    vip:
+        description:
+            - hsrp virtual IP address
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    auth:
+        description:
+            - clear text authentication string
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    state:
+        description:
+            - Specify desired state of the resource
+        required: true
+        default: present
+        choices: ['present','absent']
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http', 'https']
+        aliases: []
+'''
+
+EXAMPLES = '''
+
+# ensure vrrp group 100 and vip 10.1.100.1 is on vlan10
+- nxos_vrrp: interface=vlan10 group=100 vip=10.1.100.1 host={{ inventory_hostname }}
+
+# ensure removal of the vrrp group config # vip is required to ensure the user knows what they are removing
+- nxos_vrrp: interface=vlan10 group=100 vip=10.1.100.1 state=absent host={{ inventory_hostname }}
+
+# re-config with more params
+- nxos_vrrp: interface=vlan10 group=100 vip=10.1.100.1 preempt=false priority=130 auth=AUTHKEY host={{ inventory_hostname }}
+
+'''
+
+import socket
+
+HAS_PYCSCO = True
+try:
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import fhrp
+    from pycsco.nxos.utils import nxapi_lib
+    from pycsco.nxos.error import CLIError
+except ImportError as e:
+    HAS_PYCSCO = False
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            group=dict(required=True, type='str'),
+            interface=dict(required=True),
+            priority=dict(type='str'),
+            preempt=dict(choices=BOOLEANS, type='bool'),
+            vip=dict(required=True),
+            auth=dict(type='str'),
+            state=dict(choices=['absent', 'present'],
+                       default='present'),
+            protocol=dict(choices=['http', 'https'], default='http'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=True
+    )
+    if not HAS_PYCSCO:
+        module.fail_json(msg='pycsco is required for this module')
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+
+    state = module.params['state']
+
+    interface = module.params['interface']
+    group = module.params['group']
+    priority = module.params['priority']
+    preempt = module.params['preempt']
+    vip = module.params['vip']
+    auth = module.params['auth']
+
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
+
+    interface = interface.lower()
+
+    args = dict(group=group, priority=priority, preempt=preempt,
+                vip=vip, auth=auth)
+
+    if not nxapi_lib.feature_enabled(device, 'vrrp'):
+        module.fail_json(msg='vrrp feature needs to be enabled first')
+
+    intf_type = nxapi_lib.get_interface_type(interface)
+    if intf_type != 'ethernet':
+        if nxapi_lib.is_default(device, interface) == 'DNE':
+            module.fail_json(msg='That interface does not exist yet.  Create '
+                             + 'it first.', interface=interface)
+    elif intf_type == 'ethernet':
+        mode = nxapi_lib.get_interface_mode(device, interface)
+        if mode == 'layer2':
+            module.fail_json(msg='That interface is a layer2 port.  Make it '
+                             + 'a layer 3 port first.', interface=interface)
+
+    proposed = dict((param, value) for (param, value) in args.iteritems()
+                    if value is not None)
+
+    existing = fhrp.get_existing_vrrp(device, interface, group)
+
+    changed = False
+
+    cmds = ''
+    commands = []
+
+    if state == 'present':
+        delta = dict(
+            set(proposed.iteritems()).difference(existing.iteritems())
+            )
+        if delta:
+
+            command = fhrp.get_commands_config_vrrp(delta)
+            commands.append(command)
+            commands.insert(0, ['vrrp ' + group])
+    elif state == 'absent':
+        if existing:
+            commands.append(['no vrrp ' + group])
+
+    if commands:
+        preface = ['interface ' + interface]
+        commands.insert(0, preface)
+        cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
+                        for each in commands if each)
+        if cmds:
+            if module.check_mode:
+                module.exit_json(changed=True, commands=cmds)
+            else:
+                changed = True
+                try:
+                    device.config(cmds)
+                except CLIError as e:
+                    module.fail_json(msg=str(e))
+
+    results = {}
+    results['proposed'] = proposed
+    results['existing'] = existing
+    results['state'] = state
+    results['commands'] = cmds
+    results['changed'] = changed
+    if changed:
+        results['final'] = fhrp.get_existing_vrrp(device, interface, group)
+    else:
+        results['final'] = existing
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()
