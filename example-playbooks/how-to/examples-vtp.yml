@@ -8,4 +8,9 @@
   tasks:
 
     # set all three parameters
+    - name: "Set all three parameters"
     - nxos_vtp: domain=ntc vtp_password=vpass version=1 host={{ inventory_hostname }}
+
+    # remove password
+    - name: "Remove vtp password"
+    nxos_vtp: state=absent vtp_password=vpass2 host={{ inventory_hostname }}

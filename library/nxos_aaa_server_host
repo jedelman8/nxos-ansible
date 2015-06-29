@@ -18,72 +18,82 @@
 DOCUMENTATION = '''
 ---
 
-module: nxos_ntp
-short_description: Manages core NTP configuration
+module: nxos_aaa_server_host
+short_description: Manages AAA server host-specific configuration
 description:
-    - Manages core NTP configuration
+    - Manages AAA server host-specific configuration
 author: Michael Ben-Ami
 requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
     - pycsco
 notes:
-    - At most one of server or peer parameters may be given.
-    - At most one of source_addr and source_int parameters may be given.
-    - When state=absent, a given NTP server or peer will be removed,
-      regardless of other supplied parameters.
+    - The server_type parameter is always required.
+    - Changes to the AAA server host key (shared secret) are not idempotent
+    - If state=absent, and the key parameter will not be removed.
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
       as it will clean up the each task in the playbook by not requiring
       the username and password params for every tasks.
     - Using the username and password params will override the .netauth file
 options:
-    server:
+    server_type:
         description:
-            - Network address of NTP server
+            - The server type is either radius or tacacs
+        required: true
+        default: null
+        choices: ['radius', 'tacacs']
+        aliases: []
+    address:
+        description:
+            - Address or name of the radius or tacacs host
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    key:
+        description:
+            - shared secret for the specified host
         required: false
         default: null
         choices: []
         aliases: []
-    peer:
+    encrypt_type:
         description:
-            - Network address of NTP peer
+            - The state of encryption applied to the entered key.
+              O: clear text
+              7: encrypted
+            - Type-6 encryption is not supported.
+        required: false
+        default: null
+        choices: ['0', '7']
+        aliases: []
+    timeout:
+        description:
+            - Timeout period for specified host, in seconds
+              Range: 1-60
+              Device default: global AAA timeout period
         required: false
         default: null
         choices: []
         aliases: []
-    key_id:
+    auth_port:
         description:
-            - Authentication key identifier to use with given NTP server or peer
+            - Alternate UDP port for RADIUS authentication
         required: false
         default: null
         choices: []
         aliases: []
-    prefer:
+    acct_port:
         description:
-            - Makes given NTP server or peer the preferred NTP server or peer for the device
-        required: false
-        default: null
-        choices: ['enabled', 'disabled']
-        aliases: []
-    vrf_name:
-        description:
-            - Makes the device communicate with the given NTP server or peer over a specific VRF
+            - Alternate UDP port for RADIUS accounting
         required: false
         default: null
         choices: []
         aliases: []
-    source_addr:
+    tacacs_port:
         description:
-            - Local source address from which NTP messages are sent
-        required: false
-        default: null
-        choices: []
-        aliases: []
-    source_int:
-        description:
-            - Local source interface from which NTP messages are sent.
-            Must be fully qualified interface name.
+            - Alternate TCP port TACACS Server
         required: false
         default: null
         choices: []
@@ -94,7 +104,6 @@ options:
         required: true
         default: present
         choices: ['present','absent']
-        aliases: []
     host:
         description:
             - IP Address or hostname (resolvable by Ansible control host)
@@ -126,8 +135,17 @@ options:
         aliases: []
 '''
 EXAMPLES = '''
-# Set NTP Server with parameters
-- nxos_ntp: server=1.2.3.4 key_id=32 prefer=enabled host={{ inventory_hostname }}
+# Radius Server Host Basic settings
+  - name: "Radius Server Host Basic settings"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 acct_port=2084 timeout=10 host={{ inventory_hostname }}
+
+# Radius Server Host Key Configuration
+  - name: "Radius Server Host Key Configuration"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 key=hello encrypt_type=7 host={{ inventory_hostname }}
+
+# TACACS Server Host Configuration
+  - name: "Tacacs Server Host Configuration"
+    nxos_aaa_server_host: state=present server_type=tacacs tacacs_port=89 timeout=10 address=5.6.7.8 host={{ inventory_hostname }}
 '''
 
 import socket
@@ -136,7 +154,7 @@ try:
     HAS_PYCSCO = True
     from pycsco.nxos.device import Device
     from pycsco.nxos.device import Auth
-    from pycsco.nxos.utils import ntp
+    from pycsco.nxos.utils import aaa
     from pycsco.nxos.utils import nxapi_lib
     from pycsco.nxos.error import CLIError
 except ImportError as e:
@@ -146,14 +164,16 @@ except ImportError as e:
 def main():
     module = AnsibleModule(
         argument_spec=dict(
-            server=dict(type='str'),
-            peer=dict(type='str'),
-            key_id=dict(type='str'),
-            prefer=dict(type='str',
-                        choices=['enabled', 'disabled']),
-            vrf_name=dict(type='str'),
-            source_addr=dict(type='str'),
-            source_int=dict(type='str'),
+            server_type=dict(type='str',
+                             choices=['radius', 'tacacs'], required=True),
+            address=dict(type='str', required=True),
+            key=dict(type='str'),
+            encrypt_type=dict(type='str',
+                              choices=['0', '7']),
+            timeout=dict(type='str'),
+            auth_port=dict(type='str'),
+            acct_port=dict(type='str'),
+            tacacs_port=dict(type='str'),
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
@@ -168,6 +188,9 @@ def main():
     if not HAS_PYCSCO:
         module.fail_json(msg='pycsco is required for this module')
 
+    common_keys = ('state', 'host', 'username', 'password',
+                   'protocol', 'CHECKMODE', 'address', 'server_type')
+
     auth = Auth(vendor='cisco', model='nexus')
 
     username = module.params['username'] or auth.username
@@ -179,75 +202,61 @@ def main():
                     password=password, protocol=protocol)
     changed = False
 
+    proposed = dict((k, v) for k, v in module.params.iteritems()
+                    if v is not None and k not in common_keys)
+
     commands = []
 
-    if module.params['server'] and module.params['peer']:
+    if module.params['encrypt_type']\
+       and not module.params['key']:
         module.fail_json(
-            msg='At most one of peer and server params is may be given')
+            msg='encrypt_type must be used with key')
 
-    if module.params['key_id']\
-        or module.params['vrf_name']\
-            or module.params['prefer']:
-        if not module.params['server'] and not module.params['peer']:
-            module.fail_json(
-                msg='Please supply the server or peer parameter')
-
-    if module.params['source_addr'] and module.params['source_int']:
+    if module.params['tacacs_port']\
+       and module.params['server_type'] != 'tacacs':
         module.fail_json(
-            msg='At most one of source_addr and source_int parameters may be given')
+            msg='tacacs_port can only be used with server_type=tacacs')
 
-    proposed = {}
-    if module.params['server']:
-        proposed['serv_peer'] = 'server'
-        proposed['address'] = module.params['server']
-    elif module.params['peer']:
-        proposed['serv_peer'] = 'peer'
-        proposed['address'] = module.params['peer']
-    proposed['key_id'] = module.params['key_id']
-    proposed['prefer'] = module.params['prefer']
-    proposed['vrf_name'] = module.params['vrf_name']
+    if (module.params['auth_port'] or module.params['acct_port'])\
+       and module.params['server_type'] != 'radius':
+        module.fail_json(
+            msg='auth_port and acct_port can only be used when server_type=radius')
 
-    proposed = dict((k, v) for k, v in proposed.iteritems() if v)
-
-    if module.params['source_addr']:
-        proposed['source_type'] = 'source'
-        proposed['source_addr_int'] = module.params['source_addr']
-    elif module.params['source_int']:
-        proposed['source_type'] = 'source-interface'
-        proposed['source_addr_int'] = module.params['source_int'].lower()
+    server_type = module.params['server_type']
+    address = module.params['address']
 
     try:
-        existing = ntp.get_ntp_existing(
-            device, proposed.get('address'), proposed.get('serv_peer'))
-        existing_copy = {k: existing.get(k) for k in existing
-                         if k != 'serv_peer_list'}
+        existing = aaa.get_aaa_host_info(device, server_type, address)
     except CLIError as e:
         module.fail_json(msg=str(e))
 
     if module.params['state'] == 'present':
+        timeout = proposed.get('timeout')
+        if timeout:
+            try:
+                if int(timeout) < 1 or int(timeout) > 60:
+                    raise ValueError
+            except ValueError:
+                module.fail_json(
+                    msg='timeout must be an integer between 1 and 60')
+
         delta = dict(set(proposed.iteritems()).difference(
-            existing_copy.iteritems()))
+            existing.iteritems()))
         if delta:
-            command = ntp.config_ntp(delta, existing)
+            union = existing.copy()
+            union.update(delta)
+            command = aaa.config_aaa_host(server_type, address, union)
             if command:
                 commands.append(command)
     elif module.params['state'] == 'absent':
-        if existing.get('serv_peer') and existing.get('address'):
-            command = ntp.disable_ntp_server_peer(
-                existing['serv_peer'], existing['address'])
+        intersect = dict(set(proposed.iteritems()).intersection(
+            existing.iteritems()))
+        if intersect:
+            remainder = dict(set(existing.iteritems()).difference(
+                intersect.iteritems()))
+            command = aaa.config_aaa_host(server_type, address, remainder, True)
             if command:
-                commands.append([command])
-        existing_source_type = existing.get('source_type')
-        existing_source_addr_int = existing.get('source_addr_int')
-        proposed_source_type = proposed.get('source_type')
-        proposed_source_addr_int = proposed.get('source_addr_int')
-        if proposed_source_type:
-            if proposed_source_type == existing_source_type:
-                if proposed_source_addr_int == existing_source_addr_int:
-                    command = ntp.disable_ntp_source(
-                        existing_source_type, existing_source_addr_int)
-                    if command:
-                        commands.append([command])
+                commands.append(command)
 
     cmds = ''
     if commands:
@@ -268,8 +277,7 @@ def main():
     results['commands'] = cmds
     results['changed'] = changed
     if changed:
-        results['final'] = ntp.get_ntp_existing(
-            device, proposed.get('address'), proposed.get('serv_peer'))
+        results['final'] = aaa.get_aaa_host_info(device, server_type, address)
     else:
         results['final'] = existing
 
