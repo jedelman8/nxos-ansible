@@ -1,0 +1,65 @@
+---
+
+- name: ntp options test
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    # Basic NTP options configuration
+    - name: "Basic NTP options" 
+      nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.master == 'true'"
+        - "returned.final.stratum == '12'"
+        - "returned.final.logging == 'false'"
+
+    # Same parameters result in no change
+    - name: "Same parameters result in no change" 
+      nxos_ntp_options: master=true stratum=12 logging=false host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.master == 'true'"
+        - "returned.final.stratum == '12'"
+        - "returned.final.logging == 'false'"
+        - "returned.changed == false"
+
+    # Turn logging on
+    - name: "Turn logging on" 
+      nxos_ntp_options: logging=true host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.master == 'true'"
+        - "returned.final.stratum == '12'"
+        - "returned.final.logging == 'true'"
+        - "returned.changed == true"
+
+    # Turn off master with state=absent
+    - name: "Turn off master with state=absent" 
+      nxos_ntp_options: state=absent master=true host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.master == 'false'"
+        - "returned.final.logging == 'true'"
+        - "returned.changed == true"
+
+    # Turn on logging with state=absent
+    - name: "Turn on logging with state=absent" 
+      nxos_ntp_options: state=absent logging=false host={{ inventory_hostname }}
+      register: returned
+
+    - assert:
+        that:
+        - "returned.final.master == 'false'"
+        - "returned.final.logging == 'true'"
+        - "returned.changed == false"    
