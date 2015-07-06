@@ -211,7 +211,6 @@ def main():
     results['proposed'] = proposed
     results['existing'] = existing
     results['state'] = module.params['state']
-    results['delta'] = delta
     results['commands'] = cmds
     results['changed'] = changed
     if changed:
