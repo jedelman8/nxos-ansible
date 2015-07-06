@@ -7,5 +7,14 @@
 
   tasks:
 
-# 
-  - nxos_aaa_server: state=default global_key=yes server_type=radius directed_request=disabled timeout=5 deadtime=5 host={{ inventory_hostname }}
+# Radius Server Basic settings
+  - name: "Radius Server Basic settings"
+    nxos_aaa_server: server_type=radius timeout=9 deadtime=20 directed_request=enabled host={{ inventory_hostname }}
+
+# Tacacs Server Basic settings
+  - name: "Tacacs Server Basic settings"
+    nxos_aaa_server: server_type=tacacs timeout=8 deadtime=19 directed_request=disabled host={{ inventory_hostname }}
+
+# Setting Global Key
+  - name: "AAA Server Global Key"
+    nxos_aaa_server: server_type=radius global_key=test-key host={{ inventory_hostname }}
