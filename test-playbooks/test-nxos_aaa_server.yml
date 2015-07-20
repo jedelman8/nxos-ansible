@@ -1,0 +1,73 @@
+---
+
+- name: aaa server tests
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+# Radius Server Basic settings
+  - name: "Radius Server Basic settings"
+    nxos_aaa_server: server_type=radius timeout=9 deadtime=20 directed_request=enabled host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.deadtime == '20'"
+      - "returned.final.timeout == '9'"
+      - "returned.final.directed_request == 'enabled'"
+
+# Radius Server Basic settings idempotency
+  - name: "Radius Server Basic idempotency"
+    nxos_aaa_server: server_type=radius timeout=9 deadtime=20 directed_request=enabled host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.deadtime == '20'"
+      - "returned.final.timeout == '9'"
+      - "returned.final.directed_request == 'enabled'"
+      - "returned.changed == false"
+
+# Tacacs Server Basic settings
+  - name: "Tacacs Server Basic settings"
+    nxos_aaa_server: server_type=tacacs timeout=8 deadtime=19 directed_request=disabled host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.deadtime == '19'"
+      - "returned.final.timeout == '8'"
+      - "returned.final.directed_request == 'disabled'"
+
+# Setting Global Key
+  - name: "AAA Server Global Key"
+    nxos_aaa_server: server_type=radius global_key=test-key host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "'radius-server key' in returned.commands"
+      - "returned.changed == true"
+
+# Default Some Parameters
+  - name: "Default Some Parameters"
+    nxos_aaa_server: state=default server_type=radius deadtime=default timeout=default directed_request=default host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.deadtime == '0'"
+      - "returned.final.timeout == '5'"
+      - "returned.final.directed_request == 'disabled'"
+
+# Default (remove) global key
+  - name: "Default (remove) global key"
+    nxos_aaa_server: state=default server_type=radius global_key=default host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "'no radius-server key' in returned.commands"
+      - "returned.changed == true"

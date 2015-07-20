@@ -1,0 +1,75 @@
+---
+
+- name: aaa server host-specific tests
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+# Radius Server Host Basic settings
+  - name: "Radius Server Host Basic settings"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 acct_port=2084 timeout=10 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.acct_port == '2084'"
+      - "returned.final.timeout == '10'"
+
+
+# Radius Server Host Idempotency Test
+  - name: "Radius Server Host Idempotency Test"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 acct_port=2084 timeout=10 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.acct_port == '2084'"
+      - "returned.final.timeout == '10'"
+      - "returned.changed == false"
+
+# Radius Server Host Change Parameters
+  - name: "Radius Server Host Change Parameters"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 auth_port=2073 acct_port=2083 timeout=20 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.acct_port == '2083'"
+      - "returned.final.timeout == '20'"
+      - "returned.changed == true"
+
+
+# Radius Server Host Key Configuration
+  - name: "Radius Server Host Key Configuration"
+    nxos_aaa_server_host: state=present server_type=radius address=1.2.3.4 key=hello encrypt_type=7 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "'key 7 hello' in returned.commands"
+      - "returned.changed == true"
+
+# Remove Radius Config Parameters
+  - name: "Remove Radius Config Parameters"
+    nxos_aaa_server_host: state=absent server_type=radius address=1.2.3.4 timeout=20 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.acct_port == '2083'"
+      - "'timeout' not in returned.final"
+      - "returned.changed == true"
+
+
+# TACACS Server Host Configuration
+  - name: "Tacacs Server Host Configuration"
+    nxos_aaa_server_host: state=present server_type=tacacs tacacs_port=89 timeout=10 address=5.6.7.8 host={{ inventory_hostname }}
+    register: returned
+
+  - assert:
+      that:
+      - "returned.final.tacacs_port == '89'"
+      - "returned.final.timeout == '10'"
+
