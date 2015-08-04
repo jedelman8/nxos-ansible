@@ -173,14 +173,14 @@ def main():
         if vpc:
             mapping = \
                 nxapi_lib.get_existing_portchannel_to_vpc_mappings(device)
-            if vpc in mapping.keys() and portchannel != mapping[vpc][-2:]:
+            if vpc in mapping.keys() and portchannel != mapping[vpc].strip('Po'):
                 module.fail_json(msg="This vpc is already configured on "
                                  + "another portchannel.  Remove it first "
                                  + "before trying to assign it here. ",
                                  existing_portchannel=mapping[vpc])
 
             for vpcid, existing_pc in mapping.iteritems():
-                if portchannel == existing_pc[-2:] and vpcid != vpc:
+                if portchannel == existing_pc.strip('Po') and vpcid != vpc:
                     module.exit_json(msg="This portchannel already has another"
                                      + " VPC configured.  Remove it first "
                                      + "before assigning this one",
