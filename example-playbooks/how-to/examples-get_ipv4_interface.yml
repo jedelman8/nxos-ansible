@@ -1,0 +1,12 @@
+---
+
+- name: get neighbors testing
+  hosts: n9k1
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+
+    # retrieve ipv4 info for an interface (from 'show ip interface')
+    - nxos_get_ipv4_interface: interface=Ethernet1/1 host={{ inventory_hostname }}

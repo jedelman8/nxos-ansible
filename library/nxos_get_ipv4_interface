@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Jason Edelman <jedelman8@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_get_ipv4_interface
+short_description: Gets ipv4 configuration for a particular interface
+description:
+    - Gets ipv4 configuration for a particular interface
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - Equivalent to using 'show ip interface $INTERFACEX/Y'
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    interface:
+        description:
+            - Full name of interface, i.e. Ethernet1/1
+        required: true
+        default: false
+        choices: []
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http', 'https']
+        aliases: []
+'''
+
+EXAMPLES = '''
+# retrieve the ipv4 configuration on an interface (from 'show ip interface')
+- nxos_get_ipv4_interface: interface=Ethernet1/1 host={{ inventory_hostname }}
+
+'''
+
+try:
+    import socket
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import nxapi_lib
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            interface=dict(required=True),
+            protocol=dict(choices=['http', 'https'], default='http'),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+        ),
+        supports_check_mode=False
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+
+    interface = module.params['interface'].lower()
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
+
+    itype = nxapi_lib.get_interface_type(interface)
+    if itype != 'ethernet':
+        module.fail_json(msg='module only currently supported for Ethernet '
+                         'interface.  Use nxapi_command for others.')
+    else:
+        get_data = nxapi_lib.get_ipv4_interface(device, interface)
+
+    results = {}
+    results['interface'] = get_data
+
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()
