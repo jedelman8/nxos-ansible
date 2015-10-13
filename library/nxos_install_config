@@ -1,0 +1,215 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Jason Edelman <jedelman8@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DOCUMENTATION = '''
+---
+
+module: nxos_install_config
+short_description: Copies a local config file to bootflash and installs it
+    as the running-config on an NXOS device.
+description:
+    - Copies a local config file to bootflash and installs it
+      as the running-config on an NXOS device.
+    - If a diff file path is given, the diff is written to this file.
+author: Jason Edelman (@jedelman8)
+requirements:
+    - NX-API 1.0
+    - NX-OS 6.1(2)I3(1)
+    - pycsco
+notes:
+    - NXOS device must have SSH/SCP enabled.
+    - Local file must be a valid config file.
+    - If run in check mode, the file is still copied, and the diff
+      is still produced, but the running-config is not altered.
+    - A backup of the current running-config is saved to a timestamped file on bootflash.
+    - commit_changes=True is required to actually affect the changes.
+    - While username and password are not required params, they are
+      if you are not using the .netauth file.  .netauth file is recommended
+      as it will clean up the each task in the playbook by not requiring
+      the username and password params for every tasks.
+    - Using the username and password params will override the .netauth file
+options:
+    source_config:
+        description:
+            - Path to local config file to be copied
+        required: false
+        default: false
+        choices: []
+        aliases: []
+    diff_file:
+        description:
+            - Path to local file to store diff output.
+        required: false
+        default: false
+        choices: []
+        aliases: []
+    current_cfg_file:
+        description:
+            - Path to local file to store current current config (rollback file).
+        required: false
+        default: false
+        choices: []
+        aliases: []
+    commit_changes:
+        description:
+            - Confirms that changes to running-config should be made.
+        required: false
+        default: false
+        choices: ['true', 'false', 'yes', 'no]
+        aliases: []
+    host:
+        description:
+            - IP Address or hostname (resolvable by Ansible control host)
+              of the target NX-API enabled switch
+        required: true
+        default: null
+        choices: []
+        aliases: []
+    username:
+        description:
+            - Username used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    password:
+        description:
+            - Password used to login to the switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    protocol:
+        description:
+            - Dictates connection protocol to use for NX-API
+        required: false
+        default: http
+        choices: ['http', 'https']
+        aliases: []
+'''
+
+EXAMPLES = '''
+
+# install config and get diff
+nxos_install_config:
+  source_config: test_files/myrollbackfile
+  diff_file: diff_files/mydiff
+  commit_changes: true
+  host: "{{ inventory_hostname }}"
+
+# get a the current config file in checkpoint format
+nxos_install_config:
+  current_cfg_file: base_config.cfg
+  host: "{{ inventory_hostname }}"
+
+'''
+
+try:
+    import socket
+    from datetime import datetime
+    from pycsco.nxos.device import Device
+    from pycsco.nxos.device import Auth
+    from pycsco.nxos.utils import install_config
+    from pycsco.nxos.utils.file_copy import FileCopy
+    from pycsco.nxos.error import FileTransferError, DiffError
+except ImportError as e:
+    print '*' * 30
+    print e
+    print '*' * 30
+
+BACKUP_FILE = 'config_' + str(datetime.now()).replace(' ', '_')
+
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec=dict(
+            source_config=dict(),
+            current_cfg_file=dict(),
+            diff_file=dict(),
+            commit_changes=dict(choices=BOOLEANS),
+            host=dict(required=True),
+            username=dict(type='str'),
+            password=dict(type='str'),
+            protocol=dict(default='http', choices=['http', 'https'])
+        ),
+        required_one_of=[['source_config', 'current_cfg_file']],
+        supports_check_mode=True
+    )
+
+    auth = Auth(vendor='cisco', model='nexus')
+    username = module.params['username'] or auth.username
+    password = module.params['password'] or auth.password
+    protocol = module.params['protocol']
+    host = socket.gethostbyname(module.params['host'])
+
+    source_config = module.params['source_config']
+    diff_file = module.params['diff_file']
+    commit_changes = module.params['commit_changes']
+    current_cfg_file = module.params['current_cfg_file']
+
+    device = Device(ip=host, username=username, password=password,
+                    protocol=protocol)
+
+    changed = False
+    transfered = False
+    backup_file = None
+
+    if current_cfg_file:
+        current_cfg = install_config.get_checkpoint(device)
+        with open(current_cfg_file, "w+") as f:
+            f.write(current_cfg)
+
+    if source_config:
+        try:
+            fc = FileCopy(device, source_config)
+            if not fc.file_already_exists():
+                fc.transfer_file()
+                changed = True
+                transfered = True
+        except FileTransferError as e:
+            module.fail_json(msg='Error transferring the file.',
+                             error=str(e))
+
+        if diff_file:
+            with open(diff_file, "wb+") as f:
+                try:
+                    diff = install_config.get_diff(device, fc.dst)
+                except DiffError as de:
+                    module.fail_json(msg='Error calculating diff.',
+                                     error=str(de))
+                f.write(diff)
+                changed = True
+
+        if not module.check_mode and commit_changes is True:
+            install_config.save_config(device, BACKUP_FILE)
+            backup_file = BACKUP_FILE
+            success = install_config.rollback(device, fc.dst)
+            if not success:
+                module.fail_json(msg='Error rolling back to config file.'
+                                     'Please make sure it\'s a valid config file.')
+            changed = True
+
+    results = {}
+    results['changed'] = changed
+    results['backup_file'] = backup_file
+    results['source_config'] = source_config
+    results['transfered'] = transfered
+    results['diff_file'] = diff_file
+    module.exit_json(**results)
+
+from ansible.module_utils.basic import *
+main()

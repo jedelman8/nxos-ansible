@@ -28,7 +28,7 @@ requirements:
     - NX-OS 6.1(2)I3(1)
     - pycsco
 notes:
-    - If no vrf is supplied, vrf is set to "default"
+    - If no vrf is supplied, vrf is set to default
     - If state=absent, the route will be removed, regardless of the non-required parameters.
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
@@ -46,7 +46,7 @@ options:
     next_hop:
         description:
             - Next hop address or interface of static route.
-            It interface, it must be the fully-qualified interface name.
+              If interface, it must be the fully-qualified interface name.
         required: true
         default: null
         choices: []
@@ -55,7 +55,7 @@ options:
         description:
             - VRF for static route
         required: false
-        default: 'default'
+        default: default
         choices: []
         aliases: []
     tag:
@@ -67,16 +67,16 @@ options:
         aliases: []
     route_name:
         description:
-            - Name of the route. Used with the "name" parameter on the CLI.
+            - Name of the route. Used with the name parameter on the CLI.
         required: false
-        default: ''
+        default: null
         choices: []
         aliases: []
     pref:
         description:
-            - Preference or administrative difference of route (range: 1-255)
+            - Preference or administrative difference of route (range 1-255)
         required: false
-        default: ''
+        default: null
         choices: []
         aliases: []
     state:
