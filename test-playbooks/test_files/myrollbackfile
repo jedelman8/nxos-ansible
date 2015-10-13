@@ -3,7 +3,7 @@
 !Time: Sun Sep 27 16:46:44 2015
 
 version 6.1(2)I3(1)
-hostname N9K1
+hostname N9K2-test
 class-map type network-qos c-nq1
   description Default class on qos-group 1
 match qos-group 1
@@ -54,10 +54,10 @@ feature lldp
 
 role name priv-15
   description This is a system defined privilege role.
-  rule 1 permit read-write  
+  rule 1 permit read-write
 role name priv-14
   description This is a system defined privilege role.
-  rule 1 permit read-write  
+  rule 1 permit read-write
 role name priv-13
   description This is a system defined privilege role.
 role name priv-12
@@ -95,7 +95,7 @@ role name priv-0
   rule 4 permit command ssh6 *
   rule 3 permit command ssh *
   rule 2 permit command enable *
-  rule 1 permit read  
+  rule 1 permit read
 username admin password 5 $1$ZMowBGK3$l0FpA8Y0XHj4cWS2eJhbe0  role network-admin
 username cisco password 5 $1$nGd5VWnS$LJ/a9ztNEt6xruMCG2Erl/  role network-admin
 no password strength-check
@@ -183,7 +183,7 @@ snmp-server enable traps vtp notifs
 snmp-server enable traps vtp vlancreate
 snmp-server enable traps vtp vlandelete
 snmp-server enable traps bridge newroot
-snmp-server enable traps storm-control 
+snmp-server enable traps storm-control
 snmp-server enable traps bridge topologychange
 snmp-server enable traps stpx inconsistency
 snmp-server enable traps stpx root-inconsistency
@@ -198,7 +198,7 @@ callhome
   !#destination-profile CiscoTAC-1 message-level 0
   !#destination-profile full_txt message-level 0
   !#destination-profile short_txt message-level 0
-aaa authentication login console none 
+aaa authentication login console none
 
 ip route 0.0.0.0/0 10.1.100.1 vrf management
 ip route 7.7.7.7/32 10.10.50.1
@@ -229,18 +229,18 @@ interface Vlan10
   no shutdown
   ip address 10.1.10.2/24
   hsrp version 2
-  hsrp 10 
+  hsrp 10
     priority 120
-    ip 10.1.10.1 
+    ip 10.1.10.1
 
 interface Vlan20
   no shutdown
   vrf member keepalive
   ip address 10.1.20.2/24
   hsrp version 2
-  hsrp 20 
+  hsrp 20
     priority 120
-    ip 10.1.20.1 
+    ip 10.1.20.1
 
 interface Ethernet1/1
   shutdown
@@ -734,11 +734,11 @@ interface loopback10
 line console
 line vty
   exec-timeout 0
-boot nxos bootflash:/n9000-dk9.6.1.2.I3.1.bin 
+boot nxos bootflash:/n9000-dk9.6.1.2.I3.1.bin
 router ospf 1
 router ospf 10
   router-id 1.1.1.1
-no xml server exec-mode 
+no xml server exec-mode
 !#logging monitor
 !#logging module
 !#logging console
