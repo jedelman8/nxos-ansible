@@ -1221,7 +1221,7 @@ Manages VLAN resources and attributes
 | vlan_state  |   no  |  active  | <ul> <li>active</li>  <li>suspend</li> </ul> |  Manage the vlan oper state of the VLAN (equiv to state {active | suspend} command  |
 | protocol  |   no  |  http  | <ul> <li>http</li>  <li>https</li> </ul> |  Dictates connection protocol to use for NX-API  |
 | name  |   no  |  | <ul></ul> |  name of VLAN (not supported when using range of VLANs)  |
-| state  |   yes  |  present  | <ul> <li>present</li>  <li>absent</li> </ul> |  Manage the state of the resource  |
+| state  |   no  |  present  | <ul> <li>present</li>  <li>absent</li> </ul> |  Manage the state of the resource  |
 | host  |   yes  |  | <ul></ul> |  IP Address or hostname (resolvable by Ansible control host) of the target NX-API enabled switch  |
 | admin_state  |   no  |  up  | <ul> <li>up</li>  <li>down</li> </ul> |  Manage the vlan admin state of the VLAN (equiv to shut/no shut in vlan config mode  |
 | password  |   no  |  | <ul></ul> |  Password used to login to the switch  |
