@@ -158,7 +158,7 @@ def main():
     existing = {}
 
     if existing_ipv4:
-        existing['vrf'] = existing_ipv4['vrf']
+        existing['vrf'] = existing_ipv4['vrf'].lower()
         existing['interface'] = existing_ipv4['interface'].lower()
 
     current_vrfs = nxapi_lib.get_vrf_list(device)
