@@ -1,0 +1,197 @@
+---
+
+  - name: nxos_switchport test playbook
+    hosts: n9k1
+    connection: local
+    gather_facts: no
+
+    tasks:
+
+      - name: ENSURE VLAN 10 EXISTS
+        nxos_vlan: vlan_range=2-50 host={{ inventory_hostname }} state=present
+
+      - name: ENSURE Eth1/5 is in its default switchport state
+        nxos_switchport: interface=eth1/5 state=unconfigured host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 1
+        assert:
+          that:
+            - data.end_state.mode == 'access'
+            - data.end_state.native_vlan == '1'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '1'
+
+      - name: ENSURE Eth1/5 is configured for access vlan 10
+        nxos_switchport: interface=eth1/5 mode=access access_vlan=10 host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 2
+        assert:
+          that:
+            - data.end_state.mode == 'access'
+            - data.end_state.native_vlan == '1'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '10'
+
+
+      - name: ENSURE Eth1/5 is configured for access vlan 20
+        nxos_switchport: interface=eth1/5 mode=access access_vlan=20 host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 3
+        assert:
+          that:
+            - data.end_state.mode == 'access'
+            - data.end_state.native_vlan == '1'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '20'
+
+      - name: Ensure eth1/5 is a default trunk port although av is still 20
+        nxos_switchport: interface=eth1/5 mode=trunk host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 4
+        assert:
+          that:
+            - data.end_state.mode == 'trunk'
+            - data.end_state.native_vlan == '1'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '20'
+
+      - name: ENSURE Eth1/5 is in its default switchport state
+        nxos_switchport: interface=eth1/5 state=unconfigured host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 5
+        assert:
+          that:
+            - data.end_state.mode == 'access'
+            - data.end_state.native_vlan == '1'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '1'
+
+      - name: Ensure eth1/5 is a trunk port and ensure 2-50 are being tagged (doesn't mean others aren't also being tagged)
+        nxos_switchport: interface=eth1/5 mode=trunk native_vlan=10 trunk_vlans=2-50 host={{ inventory_hostname }}
+        register: data
+
+      - name: TEST 6
+        assert:
+          that:
+            - data.end_state.mode == 'trunk'
+            - data.end_state.native_vlan == '10'
+            - data.end_state.trunk_vlans == '1-4094'
+            - data.end_state.access_vlan == '1'
+
+      - name: Ensure these VLANs are not on the trunk
+        nxos_switchport: interface=eth1/5 mode=trunk trunk_vlans=51-4094 host={{ inventory_hostname }} state=absent
+        register: data
+
+      - name: TEST 7
+        assert:
+          that:
+            - data.end_state.mode == 'trunk'
+            - data.end_state.native_vlan == '10'
+            - data.end_state.trunk_vlans == '1-50'
+            - data.end_state.access_vlan == '1'
+
+      - name: Idempotency check
+        nxos_switchport: interface=eth1/5 mode=trunk trunk_vlans=51-4094 host={{ inventory_hostname }} state=absent
+        register: data
+
+      - name: TEST 8
+        assert:
+          that:
+            - data.changed == false
+
+      - name: Update native vlan for existing trunk
+        nxos_switchport: interface=eth1/5 mode=trunk native_vlan=5 host={{ inventory_hostname }} state=present
+        register: data
+
+      - name: TEST 9
+        assert:
+          that:
+            - data.end_state.mode == 'trunk'
+            - data.end_state.native_vlan == '5'
+            - data.end_state.trunk_vlans == '1-50'
+            - data.end_state.access_vlan == '1'
+
+      - name: Try and configure an interface that is a member of a port-channel- this is in a member!
+        nxos_switchport: interface=eth1/6 mode=trunk native_vlan=5 host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 10
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure mode=access without supplying access_vlan param
+        nxos_switchport: interface=eth1/5 mode=access host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 11
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure use mode=access with native vlan param
+        nxos_switchport: interface=eth1/5 mode=access native_vlan=10 host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 12
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure use mode=access with trunk_vlans param
+        nxos_switchport: interface=eth1/5 mode=access trunk_vlans="10-20" host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 13
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure native vlan that doesn't exist yet on switch
+        nxos_switchport: interface=eth1/5 mode=trunk native_vlan=99 host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 14
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure an access vlan that doesn't exist on yet on switch
+        nxos_switchport: interface=eth1/5 mode=access access_vlan=99 host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 15
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure an access vlan on a L3 port
+        nxos_switchport: interface=eth2/4 mode=access access_vlan=10 host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 16
+        assert:
+          that:
+            - data | failed
+
+      - name: Try and configure a trunk on a L3 port
+        nxos_switchport: interface=eth2/4 mode=trunk host={{ inventory_hostname }} state=present
+        register: data
+        ignore_errors: true
+
+      - name: TEST 17
+        assert:
+          that:
+            - data | failed
