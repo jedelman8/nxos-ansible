@@ -7,6 +7,11 @@
 
     tasks:
 
+      # NOTE THERE ARE PRE-REQUISITES TO RUN THIS AS-IS
+      # eth1/5 needs to be a switchport
+      # eth1/6 needs to be a member of a port-channel
+      # eth2/4 needs to be a Layer 3 port
+
       - name: ENSURE VLAN 10 EXISTS
         nxos_vlan: vlan_range=2-50 host={{ inventory_hostname }} state=present
 
