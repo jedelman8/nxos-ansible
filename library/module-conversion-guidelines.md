@@ -402,6 +402,10 @@ def get_switchport(device, port, module):
 
 ```
 
+# RETURN DATA
+
+Add a new doc string under EXAMPLES to document what data is being returned.  Check out nxos_vlan and nxos_switchport.
+
 
 # STATE PARAMETER
 
