@@ -127,6 +127,47 @@ EXAMPLES = '''
 
 '''
 
+RETURN = '''
+
+proposed:
+    description: k/v pairs of parameters passed into module
+    returned: always
+    type: dict
+    sample: {"access_vlan": "10", "interface": "eth1/5", "mode": "access"}
+existing:
+    description: k/v pairs of existing switchport
+    type: dict
+    sample:  {"access_vlan": "10", "access_vlan_name": "VLAN0010",
+              "interface": "Ethernet1/5", "mode": "access",
+              "native_vlan": "1", "native_vlan_name": "default",
+              "switchport": "Enabled", "trunk_vlans": "1-4094"}
+end_state:
+    description: k/v pairs of switchport after module execution
+    returned: always
+    type: dict or null
+    sample:  {"access_vlan": "10", "access_vlan_name": "VLAN0010",
+              "interface": "Ethernet1/5", "mode": "access",
+              "native_vlan": "1", "native_vlan_name": "default",
+              "switchport": "Enabled", "trunk_vlans": "1-4094"}
+state:
+    description: state as sent in from the playbook
+    returned: always
+    type: string
+    sample: "present"
+commands:
+    description: command string sent to the device
+    returned: always
+    type: string
+    sample: "interface eth1/5 ; switchport access vlan 20 ;"
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: boolean
+    sample: true
+
+'''
+
+
 import socket
 try:
     HAS_PYCSCO = True
