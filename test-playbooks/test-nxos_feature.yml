@@ -17,7 +17,7 @@
     nxos_feature: feature=rip state=enabled host={{ inventory_hostname }}
     register: rip
 
-  - debug: var=eigrp
+  - debug: var=rip
 
   - name: "Ensure VPC is enabled"
     nxos_feature: feature=vpc state=enabled host={{ inventory_hostname }}

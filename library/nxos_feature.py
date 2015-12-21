@@ -136,34 +136,6 @@ except ImportError as ie:
     HAS_PYCSCO = False
 
 
-def parsed_data_from_device(device, command, module):
-    try:
-        data = device.show(command)
-    except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
-                         error=str(clie))
-
-    data_dict = xmltodict.parse(data[1])
-    body = data_dict['ins_api']['outputs']['output']['body']
-
-    return body
-
-
-def apply_key_map(key_map, table):
-    new_dict = {}
-    for key, value in table.items():
-        new_key = key_map.get(key)
-        if new_key:
-            new_dict[new_key] = str(value)
-    return new_dict
-
-
-def apply_value_map(value_map, resource):
-    for key, value in value_map.items():
-        resource[key] = value[resource.get(key)]
-    return resource
-
-
 def command_list_to_string(command_list):
     """Converts list of commands into proper string for NX-API
 
@@ -179,14 +151,6 @@ def command_list_to_string(command_list):
         return command + ' ;'
     else:
         return ''
-
-
-def get_feature_state(available_features, feature):
-    if 'enabled' in available_features[feature]:
-        existstate = 'enabled'
-    else:
-        existstate = 'disabled'
-    return existstate
 
 
 def temp_parsed_data_from_device(device, command):
@@ -291,7 +255,7 @@ def main():
             changed = True
             device.config(cmds)
             updated_features = get_available_features(device, feature, module)
-            existstate = get_feature_state(updated_features, feature)
+            existstate = updated_features[feature]
             end_state = dict(state=existstate)
 
     results['proposed'] = proposed
