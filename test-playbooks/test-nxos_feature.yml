@@ -12,7 +12,7 @@
 
   - debug: var=nxos
 
-  - name: "Ensure eigrp is bled"
+  - name: "Ensure eigrp is disabled"
     nxos_feature: feature=eigrp state=disabled host={{ inventory_hostname }}
 
   - debug: var=nxos
