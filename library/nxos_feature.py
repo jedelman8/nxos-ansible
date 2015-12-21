@@ -189,41 +189,53 @@ def get_feature_state(available_features, feature):
     return existstate
 
 
-def get_features(device, feature, module):
+def temp_parsed_data_from_device(device, command):
+    try:
+        data = device.show(command, text=True)
+    except:
+        module.fail_json(
+            msg='Error sending {}'.format(command),
+            error=str(clie))
+
+    data_dict = xmltodict.parse(data[1])
+    body = data_dict['ins_api']['outputs']['output']['body']
+    return body
+
+
+def get_available_features(device, feature, module):
     available_features = {}
     command = 'show feature'
-    body = parsed_data_from_device(device, command, module)
-    if body:
-        try:
-            feature_table = body['TABLE_cfcFeatureCtrlTable']['ROW_cfcFeatureCtrlTable']
-            key_map = {
-                    "cfcFeatureCtrlName2": "feature",
-                    "cfcFeatureCtrlOpStatus2": "status"
-                    }
-            if isinstance(feature_table, dict):
-                feature_table = [feature_table]
+    body = temp_parsed_data_from_device(device, command)
 
-            for single_feature in feature_table:
-                features = apply_key_map(key_map, single_feature)
-                parsed_feature = features['feature']
-                available_features[parsed_feature] = features['status']
-        except:
-            splitted_body = body.split('\n')
-            for element in splitted_body:
-                splitted_element = element.split()
-                available_features[splitted_element[0]] = splitted_element[2]
+    if body:
+        splitted_body = body.split('\n')
+        for each in splitted_body[2::]:
+            stripped = each.strip()
+            words = stripped.split()
+            feature = str(words[0])
+            state = str(words[2])
+
+            if 'enabled' in state:
+                state = 'enabled'
+
+            if feature not in available_features.keys():
+                available_features[feature] = state
+            else:
+                if (available_features[feature] == 'disabled' and
+                        state == 'enabled'):
+                    available_features[feature] = state
+
     return available_features
 
 
 def get_commands(proposed, existing, state, feature):
     commands = []
-    delta = set(proposed.iteritems()).difference(existing.iteritems())
-    if state == 'enabled':
-        if delta:
+    feature_check = proposed == existing
+    if not feature_check:
+        if state == 'enabled':
             command = 'feature {0}'.format(feature)
             commands.append(command)
     elif state == 'disabled':
-        if delta:
             command = "no feature {0}".format(feature)
             commands.append(command)
     cmds = command_list_to_string(commands)
@@ -258,15 +270,15 @@ def main():
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    available_features = get_features(device, feature, module)
+    available_features = get_available_features(device, feature, module)
 
-    if feature not in available_features:
+    if feature not in available_features.keys():
         module.fail_json(
             msg='Invalid feature name.',
             features_currently_supported=available_features,
             invalid_feature=feature)
     else:
-        existstate = get_feature_state(available_features, feature)
+        existstate = available_features[feature]
 
         existing = dict(state=existstate)
         proposed = dict(state=state)
@@ -278,7 +290,7 @@ def main():
         if cmds:
             changed = True
             device.config(cmds)
-            updated_features = get_features(device, feature, module)
+            updated_features = get_available_features(device, feature, module)
             existstate = get_feature_state(updated_features, feature)
             end_state = dict(state=existstate)
 
@@ -289,8 +301,7 @@ def main():
     results['commands'] = cmds
     results['changed'] = changed
 
-    results = dict(nxos=results)
-    module.exit_json(ansible_facts=results)
+    module.exit_json(**results)
 
 
 from ansible.module_utils.basic import *
