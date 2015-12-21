@@ -181,6 +181,8 @@ def get_available_features(device, feature, module):
 
             if 'enabled' in state:
                 state = 'enabled'
+            else:
+                state = 'disabled'
 
             if feature not in available_features.keys():
                 available_features[feature] = state
