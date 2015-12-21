@@ -1,0 +1,23 @@
+---
+
+- name: neighbors testing
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "Ensure LACP is enabled"
+    nxos_feature: feature=lacp state=enabled host={{ inventory_hostname }}
+
+  - debug: var=nxos
+
+  - name: "Ensure eigrp is bled"
+    nxos_feature: feature=eigrp state=disabled host={{ inventory_hostname }}
+
+  - debug: var=nxos
+
+  - name: "Ensure VPC is enabled"
+    nxos_feature: feature=vpc state=enabled host={{ inventory_hostname }}
+
+  - debug: var=nxos
