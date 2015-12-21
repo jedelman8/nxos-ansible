@@ -199,7 +199,7 @@ def get_commands(proposed, existing, state, feature):
         if state == 'enabled':
             command = 'feature {0}'.format(feature)
             commands.append(command)
-    elif state == 'disabled':
+        elif state == 'disabled':
             command = "no feature {0}".format(feature)
             commands.append(command)
     cmds = command_list_to_string(commands)
