@@ -15,7 +15,7 @@
 
   - name: "Ensure rip is enabled"
     nxos_feature: feature=rip state=enabled host={{ inventory_hostname }}
-    register: eigrp
+    register: rip
 
   - debug: var=eigrp
 
