@@ -9,15 +9,18 @@
   tasks:
   - name: "Ensure LACP is enabled"
     nxos_feature: feature=lacp state=enabled host={{ inventory_hostname }}
+    register: lacp
 
-  - debug: var=nxos
+  - debug: var=lacp
 
-  - name: "Ensure eigrp is disabled"
-    nxos_feature: feature=eigrp state=disabled host={{ inventory_hostname }}
+  - name: "Ensure rip is enabled"
+    nxos_feature: feature=rip state=enabled host={{ inventory_hostname }}
+    register: eigrp
 
-  - debug: var=nxos
+  - debug: var=eigrp
 
   - name: "Ensure VPC is enabled"
     nxos_feature: feature=vpc state=enabled host={{ inventory_hostname }}
+    register: vpc
 
-  - debug: var=nxos
+  - debug: var=vpc
