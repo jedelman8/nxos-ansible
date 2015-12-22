@@ -123,6 +123,11 @@ changed:
     returned: always
     type: boolean
     sample: true
+feature:
+    description: the feature that has been examined
+    returned: always
+    type: string
+    sample: "vpc"
 '''
 
 import socket
@@ -266,6 +271,7 @@ def main():
     results['state'] = state
     results['commands'] = cmds
     results['changed'] = changed
+    results['feature'] = feature
 
     module.exit_json(**results)
 
