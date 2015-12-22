@@ -1,0 +1,514 @@
+---
+
+  - name: nxos_interface test playbook
+    hosts: n9k1
+    connection: local
+    gather_facts: no
+
+    tasks:
+
+       - name: ENSURE INTERFACE IS LAYER 3 WITH DESCR
+         nxos_interface: interface=Eth1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 1
+         assert:
+           that:
+             - data.end_state.description == 'Configured by Ansible'
+             - data.end_state.mode == 'layer3'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 description='Configured by Ansible' mode=layer3 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 2
+         assert:
+           that:
+             - data.changed == false
+
+       - name: MODIFY DESCRIPTION AND MODE
+         nxos_interface: interface=Eth1/1 description='Configured by' mode=layer2 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 3
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'Configured by'
+             - data.end_state.mode == 'layer2'
+
+       - name: MODIFY DESCRIPTION
+         nxos_interface: interface=Eth1/1 description='Configured by Ansible' mode=layer2 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 4
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'Configured by Ansible'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 description='Configured by Ansible' mode=layer2 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 5
+         assert:
+           that:
+             - data.changed == false
+
+       - name: SPEED/DUP TEST
+         nxos_interface: interface=Eth1/1 speed=auto duplex=auto admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 6
+         assert:
+           that:
+             - "'speed auto' in '{{ data.commands }}'"
+             - "'duplex auto' in '{{ data.commands }}'"
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+
+
+       - name: TEST 7
+         assert:
+           that:
+             - data.changed == false
+
+
+       - name:  MODIFY ADMIN STATE
+         nxos_interface: interface=Eth1/1 admin_state=up host={{ inventory_hostname }}
+         register: data
+         tags: ttt
+
+       - name: TEST 8
+         assert:
+           that:
+             - data | changed
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 admin_state=up host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 9
+         assert:
+           that:
+             - data.changed == false
+
+       - name: UPDATE SPEED/DUP
+         nxos_interface: interface=Eth1/1 admin_state=up duplex=full speed=10000 host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 10
+         assert:
+           that:
+             - data | changed
+             - data.end_state.duplex == 'full'
+             - data.end_state.admin_state == 'up'
+
+       - name: UPDATE SPEED/DUP
+         nxos_interface: interface=Eth1/1 speed=auto duplex=auto admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 11
+         assert:
+           that:
+             - "'speed auto' in '{{ data.commands }}'"
+             - "'duplex auto' in '{{ data.commands }}'"
+             - data.end_state.admin_state == 'down'
+             - data | changed
+
+       - name: UPDATE ADMIN STATE
+         nxos_interface: interface=Eth1/1 speed=auto duplex=auto admin_state=up host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 12
+         assert:
+           that:
+             - data.end_state.admin_state == 'up'
+             - data | changed
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 speed=auto duplex=auto admin_state=up host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 13
+         assert:
+           that:
+             - data.end_state.admin_state == 'up'
+             - data.changed == false
+
+       - name:  DEFAULT TEST (this platform defaults to 10000/full)
+         nxos_interface: interface=Eth1/1 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 14
+         assert:
+           that:
+             - data | changed
+             - data.end_state.mode == 'layer2'
+             - data.end_state.admin_state == 'up'
+             - data.end_state.speed == '10000'
+             - data.end_state.duplex == 'full'
+
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=Eth1/1 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 15
+         assert:
+           that:
+             - data.changed == false
+
+       - name: SVI
+         nxos_interface: interface=vlan10 state=absent host={{ inventory_hostname }}
+
+         register: data
+       - nxos_interface: interface=vlan10 state=present admin_state=up host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 16
+         assert:
+           that:
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 state=present host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 17
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'up'
+       - name: ADD DESCRIPTION
+         nxos_interface: interface=vlan10 description='vlan test 10' host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 18
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'vlan test 10'
+             - data.end_state.admin_state == 'up'
+
+       - name: DEFAULT SVI
+         nxos_interface: interface=vlan10 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 19
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'None'
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 20
+         assert:
+           that:
+             - data.changed == false
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 21
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'down'
+
+       - name: UPDATE ADMIN STATE
+         nxos_interface: interface=vlan10 admin_state=up host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 22
+         assert:
+           that:
+             - data | changed
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 admin_state=up host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 23
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 admin_state=up host={{ inventory_hostname }}
+         register: data
+         tags: vlan1
+
+       - name: TEST 24
+         assert:
+           that:
+             - data.changed == false
+
+       - name: REMOVE SVI
+         nxos_interface: interface=vlan10 state=absent host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 25
+         assert:
+           that:
+             - data | changed
+             - data.end_state == {}
+
+       - name:  IDEMPOTENCY CHECK
+         nxos_interface: interface=vlan10 state=absent host={{ inventory_hostname }}
+         register: data
+         tags: vlan1
+
+       - name: TEST 26
+         assert:
+           that:
+             - data.changed == false
+
+       - name: loops
+         nxos_interface: interface=loopback150 state=absent host={{ inventory_hostname }}
+         register: data
+
+
+       - name: CREATE LOOP 150
+         nxos_interface: interface=loopback150 state=present host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 27
+         assert:
+           that:
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=loopback150 state=present host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 28
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'up'
+       - name:  ADD DESCR
+         nxos_interface: interface=loopback150 description='vlan test 10' host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 29
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'vlan test 10'
+             - data.end_state.admin_state == 'up'
+
+       - name:  DEFAULT LOOP
+         nxos_interface: interface=loopback150 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 30
+         assert:
+           that:
+             - data | changed
+             - data.existing.admin_state == 'up'
+             - data.end_state.description == 'None'
+             - data.end_state.admin_state == 'down'
+
+       - name: DEFAULT AGAIN - WEIRD
+         nxos_interface: interface=loopback150 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 31 - loopback default seems to toggle - weird!
+         assert:
+           that:
+             - data | changed
+             - data.existing.admin_state == 'down'
+             - data.end_state.description == 'None'
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=loopback150 admin_state=up host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 32
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'up'
+
+       - name: ADMIN DOWN
+         nxos_interface: interface=loopback150 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 33
+         assert:
+           that:
+             - data | changed
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=loopback150 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 34
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=loopback150 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 35
+         assert:
+           that:
+             - data.changed == false
+
+       - name: REMOVE LOOP
+         nxos_interface: interface=loopback150 state=absent host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 36
+         assert:
+           that:
+             - data | changed
+             - data.end_state == {}
+
+       - name:  IDEMPOTENCY CHECK
+         nxos_interface: interface=loopback150 state=absent host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 37
+         assert:
+           that:
+             - data.changed == false
+
+
+
+       - name: portchannel
+         nxos_interface: interface=portchannel101 state=absent host={{ inventory_hostname }}
+         register: data
+
+
+       - name: CREATE portchannel101
+         nxos_interface: interface=portchannel101 state=present host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 38
+         assert:
+           that:
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 state=present host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 39
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'up'
+       - name: ADD DESCR
+         nxos_interface: interface=portchannel101 description='portchannel101 test' host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 40
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'portchannel101 test'
+             - data.end_state.admin_state == 'up'
+
+       - name:  DEFAULT INTERFACE
+         nxos_interface: interface=portchannel101 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 41
+         assert:
+           that:
+             - data | changed
+             - data.end_state.description == 'None'
+             - data.end_state.admin_state == 'up'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 state=default host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 42
+         assert:
+           that:
+             - data.changed == false
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 admin_state=up host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 43
+         assert:
+           that:
+             - data.changed == false
+
+       - name:  ADMIN DOWN
+         nxos_interface: interface=portchannel101 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 44
+         assert:
+           that:
+             - data | changed
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 45
+         assert:
+           that:
+             - data.changed == false
+             - data.end_state.admin_state == 'down'
+
+       - name: IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 admin_state=down host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 46
+         assert:
+           that:
+             - data.changed == false
+
+       - name: REMOVE portchannel101
+         nxos_interface: interface=portchannel101 state=absent host={{ inventory_hostname }}
+         register: data
+
+
+       - name: TEST 47
+         assert:
+           that:
+             - data | changed
+             - data.end_state == {}
+
+       - name:  IDEMPOTENCY CHECK
+         nxos_interface: interface=portchannel101 state=absent host={{ inventory_hostname }}
+         register: data
+
+       - name: TEST 48
+         assert:
+           that:
+             - data.changed == false
+
