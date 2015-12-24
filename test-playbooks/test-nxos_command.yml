@@ -1,0 +1,147 @@
+---
+
+- name: NXOS_COMMAND TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "SHOW INTERFACE"
+    nxos_command: command='show interface lo10' host={{ inventory_hostname }} type=show
+    register: data
+
+  - name: "TEST 1"
+    assert:
+      that:
+        - data.changed == false
+
+  - name: "FAIL DUE TO NOT EXISTENT CONFIGURATION"
+    nxos_command: command='show interface lo12' host={{ inventory_hostname }} type=show
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 2"
+    assert:
+      that:
+        - data | failed
+
+  - name: "CONFIGURE LOOPBACK INTERFACE"
+    nxos_command: 
+      host: "{{ inventory_hostname }}"
+      type: config
+      command_list: ['interface lo11','ip add 11.11.11.11 255.255.255.0']
+    register: data
+
+  - name: "TEST 3"
+    assert:
+      that:
+        - data.result[0].msg == 'Success'
+        - data.result[1].msg == 'Success'
+
+  - name: "ENSURE FAIL WITH COMMAND AND COMMAND_LIST AT THE SAME TIME"
+    nxos_command: 
+      host: "{{ inventory_hostname }}"
+      type: config
+      command_list: ['interface lo10','ip add 10.10.10.10 255.255.255.0']
+      command: 'show interface lo10'
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 4"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE 'SHOW' FAILS WITHOUT COMMAND AND COMMAND_LIST AT THE SAME TIME"
+    nxos_command: 
+      host: "{{ inventory_hostname }}"
+      type: config
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 5"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE 'CONFIG' FAILS WITHOUT COMMAND AND COMMAND_LIST AT THE SAME TIME"
+    nxos_command: 
+      host: "{{ inventory_hostname }}"
+      type: config
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 6"
+    assert:
+      that:
+        - data | failed
+
+  - name: "CONFIGURE HOSTNAME"
+    nxos_command: command='hostname TESTHOSTNAME' host={{ inventory_hostname }} type=config
+    register: data
+
+  - name: "TEST 7"
+    assert:
+      that:
+        - data.result.msg == 'Success'
+        - data.proposed.cmd_type == 'config'
+
+  - name: "RE-CONFIGURE HOSTNAME"
+    nxos_command: command='hostname N9K2' host={{ inventory_hostname }} type=config
+    register: data
+
+  - name: "TEST 8"
+    assert:
+      that:
+        - data | changed
+
+  - name: "FAIL DUE TO UNSUPPORTED COMMAND FORMAT"
+    nxos_command: command='show run interface mgmt0 | inc description' host={{ inventory_hostname }} text=false type=show
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 9"
+    assert:
+      that:
+        - data | failed
+
+  - name: "CONFIGURE LOOPBACK INTERFACE"
+    nxos_command: 
+      host: "{{ inventory_hostname }}"
+      type: config
+      command: 'interface lo13, ip add 13.13.13.13 255.255.255.0'
+    register: data
+
+  - name: "TEST 10"
+    assert:
+      that:
+        - data.result[0].msg == 'Success'
+        - data.result[1].msg == 'Success'
+
+  - name: "ENSURE FAIL DUE TO COMMAND TYPE IS LIST"
+    nxos_command:
+      host: "{{ inventory_hostname }}"
+      type: config
+      command: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 11"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE FAIL DUE TO COMMAND_LIST AND TEXT PARAMS TOGETHER"
+    nxos_command:
+      host: "{{ inventory_hostname }}"
+      type: config
+      text: true
+      command_list: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 12"
+    assert:
+      that:
+        - data | failed
