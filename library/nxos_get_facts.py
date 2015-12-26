@@ -292,7 +292,6 @@ def main():
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    commands = list()
     show_version_command = 'show version'
     interface_command = 'show interface status'
     show_module_command = 'show module'
