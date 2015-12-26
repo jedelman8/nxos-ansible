@@ -40,7 +40,7 @@
 
   # In order to be successful, the file should already exist. 
   - name: "ENSURE FAILS DUE TO ALREADY EXISTING FILE"
-    nxos_save_config: path='bootflash:configs/my_config_test1.cfg' host={{ inventory_hostname }}
+    nxos_save_config: path='bootflash:configs/my_config_test.cfg' host={{ inventory_hostname }}
     register: data
     ignore_errors: true
 
