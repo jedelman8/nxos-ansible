@@ -84,8 +84,8 @@ EXAMPLES = '''
 RETURN = '''
 facts:
     description:
-        - Show multiple information about devices.
-          These include interface, vlan, module and environment information.
+        - Show multiple information about device.
+          These include interfaces, vlans, module and environment information.
     returned: always
     type: dict
     sample: {"fan_info": [{"direction":"front-to-back","hw_ver": "--",
@@ -299,28 +299,28 @@ def main():
     show_environment_command = 'show environment'
     show_vlan_command = 'show vlan brief'
 
+    # Get 'show version' facts.
     show_version_body = parsed_data_from_device(device, show_version_command, module)
     show_version = get_show_version_facts(show_version_body)
-    commands.append(show_version_command)
 
+    # Get interfaces facts.
     interface_body = parsed_data_from_device(device, interface_command, module)
     detailed_list, interface_list = get_interface_facts(interface_body, detail)
-    commands.append(interface_command)
 
+    # Get module facts.
     show_module_body = parsed_data_from_device(
                                     device, show_module_command, module)
     show_module = get_show_module_facts(show_module_body)
-    commands.append(show_module_command)
 
+    # Get environment facts.
     show_environment_body = parsed_data_from_device(
                                     device, show_environment_command, module)
     powersupply = get_powersupply_facts(show_environment_body)
     fan = get_fan_facts(show_environment_body)
-    commands.append(show_environment_command)
 
+    # Get vlans facts.
     show_vlan_body = parsed_data_from_device(device, show_vlan_command, module)
     vlan = get_vlan_facts(show_vlan_body)
-    commands.append(show_vlan_command)
 
     facts = dict(
         interfaces=interface_list,
