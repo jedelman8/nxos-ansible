@@ -111,29 +111,41 @@ except ImportError as ie:
     HAS_PYCSCO = False
 
 
+def parsed_data_from_device(device, command, module):
+    try:
+        data = device.show(command, text=True)
+    except CLIError as clie:
+        module.fail_json(msg='Error sending {}'.format(command),
+                         error=str(clie))
+
+    try:
+        data_dict = xmltodict.parse(data[1])
+        body = data_dict['ins_api']['outputs']['output']['body']
+    except KeyError:
+        data_dict = xmltodict.parse(data[1])
+        error = data_dict['ins_api']['outputs']['output'].get(
+            'clierror', 'error1: could not validate save')
+        module.fail_json(msg=error)
+
+    return body
+
+
 def save_config(device, path, module):
     command = 'copy run {0}'.format(path)
     error = None
     changed = False
-    try:
-        save_running = device.show(command, text=True)
-        save_running_output = xmltodict.parse(save_running[1])
-        save = save_running_output['ins_api']['outputs']['output']['body']
-        splitted_save = save.split('\n')
-        complete = False
-        for each in splitted_save:
-            if '100%' in each or 'copy complete' in each.lower():
-                complete = True
-                changed = True
 
-        if complete:
-            result = 'successful'
-        else:
-            error = 'error: could not validate save'
-    except KeyError:
-        error = dict_results['ins_api']['outputs']['output'].get(
-            'clierror', 'error3: could not validate save')
-    except:
+    save = parsed_data_from_device(device, command, module)
+    splitted_save = save.split('\n')
+    complete = False
+    for each in splitted_save:
+        if '100%' in each or 'copy complete' in each.lower():
+            complete = True
+            changed = True
+
+    if complete:
+        result = 'successful'
+    else:
         error = 'error2: could not validate save'
 
     if error is not None:
