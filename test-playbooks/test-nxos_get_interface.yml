@@ -1,0 +1,46 @@
+---
+
+- name: NXOS_GET_INTERFACE TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "SHOW INTERFACE DETAILS"
+    nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }} detail=true
+    register: data
+
+  - name: TEST1
+    assert:
+      that:
+        - data['interface']['interface'] == 'Ethernet2/1'
+
+  - name: "SHOW INTERFACE INFO"
+    nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST2
+    assert:
+      that:
+        - data['interface']['type'] == 'ethernet'
+
+  - name: "CONFIGURE IP INTERFACE"
+    nxos_ipv4_interface: interface=Ethernet2/1 host={{ inventory_hostname }} ip_addr=10.1.100.12 state=present mask=24
+    register: data
+
+  - name: TEST3
+    assert:
+      that:
+        - data | changed
+
+  - name: "ENSURE CONFIGURATION HAS BEEN PERFORMED"
+    nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST4
+    assert:
+      that:
+        - data['interface']['ip_addr'] == '10.1.100.2'
+        - data['interface']['mask'] == '24'
+
