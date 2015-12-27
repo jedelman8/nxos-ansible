@@ -278,6 +278,8 @@ def main():
         ),
         supports_check_mode=False
     )
+    if not HAS_PYCSCO:
+        module.fail_json(msg='There was a problem loading pycsco')
 
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
