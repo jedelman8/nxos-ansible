@@ -133,6 +133,7 @@ def save_config(device, path, module):
     command = 'copy run {0}'.format(path)
     error = None
     changed = False
+    complete = False
 
     save_response = parsed_data_from_device(device, command, module)
     if '100%' in save_response or 'copy complete' in save_response.lower():
