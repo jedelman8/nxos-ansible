@@ -15,7 +15,7 @@
     assert:
       that:
         - data | changed
-        - data.save == 'successful'
+        - data.status == 'successful'
 
   - name: "ENSURE FAILS DUE TO BAD PATH FORMAT"
     nxos_save_config: path='bootflash=configs/my_config_test.cfg' host={{ inventory_hostname }}
@@ -29,14 +29,14 @@
 
   # In order to be successful, the file shouldn't exist yet.
   - name: "SAVE CONFIG TO PATH"
-    nxos_save_config: path='bootflash:configs/my_config_test.cfg' host={{ inventory_hostname }}
+    nxos_save_config: path='bootflash:configs/my_config_testing1.cfg' host={{ inventory_hostname }}
     register: data
 
   - name: TEST 3
     assert:
       that:
         - data | changed
-        - data.path == 'bootflash:configs/my_config_test.cfg'
+        - data.path == 'bootflash:configs/my_config_testing1.cfg'
 
   # In order to be successful, the file should already exist. 
   - name: "ENSURE FAILS DUE TO ALREADY EXISTING FILE"

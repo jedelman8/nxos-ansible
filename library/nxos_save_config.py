@@ -126,7 +126,6 @@ def parsed_data_from_device(device, command, module):
         error = data_dict['ins_api']['outputs']['output'].get(
             'clierror', 'error1: could not validate save')
         module.fail_json(msg=error)
-
     return body
 
 
@@ -135,23 +134,17 @@ def save_config(device, path, module):
     error = None
     changed = False
 
-    save = parsed_data_from_device(device, command, module)
-    splitted_save = save.split('\n')
-    complete = False
-    for each in splitted_save:
-        if '100%' in each or 'copy complete' in each.lower():
-            complete = True
-            changed = True
+    save_response = parsed_data_from_device(device, command, module)
+    if '100%' in save_response or 'copy complete' in save_response.lower():
+        complete = True
+        changed = True
 
     if complete:
         result = 'successful'
-    else:
-        error = 'error2: could not validate save'
-
-    if error is not None:
-        module.fail_json(msg=error)
-    else:
         return (result, changed)
+    else:
+        error = 'error: could not validate save'
+        module.fail_json(msg=error, response=save_response)
 
 
 def main():
@@ -190,7 +183,7 @@ def main():
 
     results = {}
     results['path'] = path
-    results['save'] = complete_save
+    results['status'] = complete_save
     results['changed'] = changed
 
     module.exit_json(**results)
