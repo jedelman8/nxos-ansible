@@ -36,8 +36,8 @@
   - name: "TEST 3"
     assert:
       that:
-        - data.result[0].msg == 'Success'
-        - data.result[1].msg == 'Success'
+        - data.response[0].msg == 'Success'
+        - data.response[1].msg == 'Success'
 
   - name: "ENSURE FAIL WITH COMMAND AND COMMAND_LIST AT THE SAME TIME"
     nxos_command: 
@@ -84,7 +84,7 @@
   - name: "TEST 7"
     assert:
       that:
-        - data.result.msg == 'Success'
+        - data.response.msg == 'Success'
         - data.proposed.cmd_type == 'config'
 
   - name: "RE-CONFIGURE HOSTNAME"
@@ -116,8 +116,8 @@
   - name: "TEST 10"
     assert:
       that:
-        - data.result[0].msg == 'Success'
-        - data.result[1].msg == 'Success'
+        - data.response[0].msg == 'Success'
+        - data.response[1].msg == 'Success'
 
   - name: "ENSURE FAIL DUE TO COMMAND TYPE IS LIST"
     nxos_command:
@@ -136,7 +136,7 @@
     nxos_command:
       host: "{{ inventory_hostname }}"
       type: config
-      text: true
+      command: 'interface lo13, ip add 13.13.13.13 255.255.255.0'
       command_list: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']
     register: data
     ignore_errors: true

@@ -67,7 +67,7 @@ options:
         description:
             - Dictates how data will be returned for show commands.
               Set to true if NX-API doesn't support structured output
-              for a given command
+              for a given command. Doesn't work for config commands.
         required: false
         default: null
         choices: [true,false]
@@ -245,25 +245,6 @@ def main():
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    if isinstance(command, list):
-        module.fail_json(msg='Only single command are supported using "command". \
-            If you want to use a List, go for "command_list" instead.')
-
-    if cmd_type == 'show':
-        if command_list:
-            module.fail_json(msg='Only single show commands are supported. \
-                Lists are only supported for config changes \
-                at this time.')
-
-    if cmd_type == 'config':
-        if isinstance(command_list, str):
-            module.fail_json(msg='Only Lists are supported when "command_list" \
-                is used.')
-        if text:
-            module.fail_json(msg='Do not use text=true when using \
-                cmd_type=config. The text param is only \
-                supported when cmd_type=show')
-
     if command:
         commands = command
     elif command_list:
@@ -276,30 +257,45 @@ def main():
         if value is not None:
             proposed[param] = value
 
-    if cmd_type == 'config':
-        if command:
-            if isinstance(command, str):
-                splitted_command = command.split(',')
-                cmds = command_list_to_string(splitted_command)
-        elif command_list:
-            cmds = command_list_to_string(command_list)
+    if command:
+        if isinstance(command, str):
+                splitted_commands = commands.split(',')
+                cmds = command_list_to_string(splitted_commands)
+        else:
+            module.fail_json(msg='Only single command are supported using "command". \
+            If you want to use a List, go for "command_list" instead.')
 
+    elif command_list:
+        if isinstance(command_list, list):
+            cmds = command_list_to_string(commands)
+        else:
+            module.fail_json(msg='Only Lists are supported using "command_list". \
+                If you want to use a String, go for "command" instead.')
+
+    response = []
     if cmd_type == 'show':
-        result = parsed_data_from_device(device, command, module, text)
-
+        if command:
+            splitted_command = command.split(',')
+            for each in splitted_command:
+                each = each.strip()
+                output = parsed_data_from_device(device, each, module, text)
+                response.append(output)
+        elif command_list:
+            for command in command_list:
+                output = parsed_data_from_device(device, command, module, text)
+                response.append(output)
     elif cmd_type == 'config':
         if cmds:
             changed = True
-            result = send_command(device, cmds)
+            response = send_command(device, cmds)
 
     results = {}
     results['changed'] = changed
     results['proposed'] = proposed
-    results['commands'] = [commands]
-    results['result'] = result
+    results['commands'] = cmds
+    results['response'] = response
 
     module.exit_json(**results)
 
 from ansible.module_utils.basic import *
-if __name__ == '__main__':
-    main()
+main()
