@@ -161,6 +161,13 @@ except ImportError as ie:
     HAS_PYCSCO = False
 
 
+def normalize_to_list(output):
+    if isinstance(output, dict):
+        return [output]
+    else:
+        return output
+
+
 def parsed_data_from_device(device, command, module, text):
     try:
         data = device.show(command, text=text)
@@ -169,46 +176,44 @@ def parsed_data_from_device(device, command, module, text):
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
-    body = data_dict['ins_api']['outputs']['output']['body']
 
-    return body
+    output = normalize_to_list(data_dict['ins_api']['outputs']['output'])
+
+    return output
+
+
+def send_config_command(device, command, module):
+    try:
+        data = device.config(command)
+    except CLIError as clie:
+        module.fail_json(msg='Error sending {}'.format(command),
+                         error=str(clie))
+
+    data_dict = xmltodict.parse(data[1])
+
+    output = normalize_to_list(data_dict['ins_api']['outputs']['output'])
+
+    return output
+
+
+def send_show_command(device, command, module, text):
+    if text is None:
+        text = False
+    return parsed_data_from_device(device, command, module, text)
 
 
 def command_list_to_string(command_list):
     """Converts list of commands into proper string for NX-API
-
     Args:
         cmds (list): ordered list of commands
-
     Returns:
         str: string of commands separated by " ; "
-
     """
     if command_list:
         command = ' ; '.join(command_list)
-        return command + ' ;'
+        return command
     else:
         return ''
-
-
-def send_command(device, cmds):
-    data_dict = xmltodict.parse(device.config(cmds)[1])
-    get_data = data_dict['ins_api']['outputs']['output']
-    try:
-        for each in get_data:
-            clierror = each.get('clierror', None)
-            msg = each.get('msg', None)
-            if clierror:
-                raise IOError(clierror, msg)
-    except AttributeError:
-            clierror = get_data.get('clierror', None)
-            msg = get_data.get('msg', None)
-
-    if clierror:
-        raise IOError(clierror, msg)
-    else:
-        body = get_data
-    return body
 
 
 def main():
@@ -245,49 +250,36 @@ def main():
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol)
 
-    if command:
-        commands = command
-    elif command_list:
-        commands = command_list
-
-    args = dict(commands=commands, text=text, cmd_type=cmd_type)
-    proposed = {}
     changed = False
-    for param, value in args.iteritems():
-        if value is not None:
-            proposed[param] = value
+    cmds = ''
 
     if command:
         if isinstance(command, str):
-                splitted_commands = commands.split(',')
-                cmds = command_list_to_string(splitted_commands)
+            cmds = command_list_to_string([command])
         else:
-            module.fail_json(msg='Only single command are supported using "command". \
-            If you want to use a List, go for "command_list" instead.')
+            module.fail_json(msg='Only strings are supported with "command"'
+                             '\nIf you want to use a list, use the param'
+                             '" command_list" instead.')
 
     elif command_list:
         if isinstance(command_list, list):
-            cmds = command_list_to_string(commands)
+            cmds = command_list_to_string(command_list)
         else:
-            module.fail_json(msg='Only Lists are supported using "command_list". \
-                If you want to use a String, go for "command" instead.')
+            module.fail_json(msg='Only Lists are supported with "command_list"'
+                             '\nIf you want to send a single command,'
+                             'use the param "command" instead.')
 
-    response = []
-    if cmd_type == 'show':
-        if command:
-            splitted_command = command.split(',')
-            for each in splitted_command:
-                each = each.strip()
-                output = parsed_data_from_device(device, each, module, text)
-                response.append(output)
-        elif command_list:
-            for command in command_list:
-                output = parsed_data_from_device(device, command, module, text)
-                response.append(output)
-    elif cmd_type == 'config':
-        if cmds:
+    proposed = dict(commands=cmds, text=text, cmd_type=cmd_type)
+
+    if cmds:
+        if cmd_type == 'show':
+            response = send_show_command(device, cmds, module, text)
+
+        elif cmd_type == 'config':
             changed = True
-            response = send_command(device, cmds)
+            response = send_config_command(device, cmds, module)
+    else:
+        module.fail_json(msg='no commands to send. check format')
 
     results = {}
     results['changed'] = changed
@@ -298,4 +290,5 @@ def main():
     module.exit_json(**results)
 
 from ansible.module_utils.basic import *
-main()
+if __name__ == "__main__":
+    main()
