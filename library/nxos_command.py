@@ -111,7 +111,7 @@ EXAMPLES = '''
 - nxos_command: command='show interface Ethernet1/1' host={{ inventory_hostname }} type=show
 
 # Configure secondary interface on Eth1/2 with command as string
-- nxos_command: command='interface Eth1/2,ip address 5.5.5.5/24 secondary' host={{ inventory_hostname }} type=config
+- nxos_command: command='interface Eth1/2 ; ip address 5.5.5.5/24 secondary ;' host={{ inventory_hostname }} type=config
 
 # Configure secondary interface on Eth1/2 with command as list
 - nxos_command:
@@ -143,11 +143,11 @@ changed:
 result:
     description: show the outcome of our commands
     returned: always
-    type: list of dict
-    sample: [{"body": null,"code": "200",
-                "msg": "Success"},
-            {"body": null,"code": "200",
-                "msg": "Success"}]
+    type: dict
+    sample: {"changed":false,"commands": "show hostname",
+            "proposed": {"cmd_type": "show","commands": "show hostname",
+            "text": null},"response": [{"body": {"hostname": "N9K2"},
+            "code": "200","input": "show hostname", "msg": "Success"}]}}
 '''
 
 import socket
