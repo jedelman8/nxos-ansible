@@ -87,7 +87,7 @@ path:
     returned: always
     type: string
     sample: 'startup-config'
-save:
+status:
     description: Shows whether the save's been successful or not
     returned: always
     type: string
