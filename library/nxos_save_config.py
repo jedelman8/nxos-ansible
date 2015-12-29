@@ -28,6 +28,10 @@ requirements:
     - pycsco
     - xmltodict
 notes:
+    - If you are using a user-defined filename, the module is not idempotent
+      as the switch does not allow you to overwrite an existing file.  You
+      can use nxos_dir to manage files or ensure it doesn't exist before
+      (or just save it as startup-config)
     - While username and password are not required params, they are
       if you are not using the .netauth file.  .netauth file is recommended
       as it will clean up the each task in the playbook by not requiring
@@ -36,8 +40,7 @@ notes:
 options:
     path:
         description:
-            - Path of destination. To succeed, the path must not exist yet.
-              Ex: bootflash:config.cfg, etc.
+            - Path including filename on target device to save running config
         required: false
         default: null
         choices: []
