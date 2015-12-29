@@ -1,0 +1,64 @@
+---
+
+- name: NXOS_PING TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: TEST PING TO ONE DESTINATION
+    nxos_ping: dest=8.8.8.8 vrf=management host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST1
+    assert:
+      that: 
+        - data.summary
+        - data.action
+        - data.command
+        - data.dest
+        - data.count
+        - data.rtt
+
+  - name: TEST PING TO MULTIPLE DESTINATION
+    nxos_ping: dest={{ item }} vrf=management host={{ inventory_hostname }}
+    with_items:
+      - 8.8.8.8
+      - 4.4.4.4
+      - 198.6.1.4
+    register: data
+
+  - name: TEST2
+    assert:
+      that: data | success
+
+  - name: ENSURE PING SUCCESS WITH 8.8.8.8
+    nxos_ping: dest={{ item }} vrf=management host={{ inventory_hostname }}
+    with_items:
+      - 8.8.8.8
+      - 4.4.4.4
+      - 198.6.1.4
+    register: data
+
+  - name: TEST3
+    assert:
+      that: data.results[{{ item.0 }}].summary.packet_loss == '0.00%'
+    when: data.results[{{ item.0 }}].dest == '8.8.8.8'
+    with_indexed_items: data.results
+
+  - name: TEST PING TO COUNT=8
+    nxos_ping: dest=8.8.8.8 vrf=management host={{ inventory_hostname }} count=8
+    register: data
+
+  - name: TEST4
+    assert:
+      that: data.count == '8'
+
+  - name: TESTING PING WITH SOURCE PARAM
+    nxos_ping: dest=8.8.8.8 vrf=management source=10.1.100.21 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST5
+    assert:
+      that: data | success
