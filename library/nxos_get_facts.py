@@ -97,7 +97,7 @@ facts:
             "actual_output": "0 W","model": "N9K-PAC-650W","number": "1",
             "status":"Shutdown"}],"rr":"Reset Requested by CLI command reload",
             "vlan_list":[{"admin_state":"noshutdown","interfaces":["Ethernet1/1"],
-            "name": "default","state": "active","vlan_id": "16777216"}]}
+            "name": "default","state": "active","vlan_id": "1"}]}
 '''
 
 
