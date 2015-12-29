@@ -36,7 +36,8 @@ notes:
 options:
     path:
         description:
-            - Path of destination.  Ex: bootflash:config.cfg, etc.
+            - Path of destination. To succeed, the path must not exist yet.
+              Ex: bootflash:config.cfg, etc.
         required: false
         default: null
         choices: []
@@ -177,7 +178,7 @@ def main():
         if ':' not in path:
             msg = ('invalid format for path.  Requires ":" ' +
                         'Example- bootflash:config.cfg' +
-                        'or bootflash:/configs/test.cfg')
+                        'or bootflash:configs/test.cfg')
             module.fail_json(msg=msg)
 
     complete_save, changed = save_config(device, path, module)
