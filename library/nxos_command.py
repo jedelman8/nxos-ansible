@@ -126,7 +126,7 @@ proposed:
     description: proposed changes
     returned: always
     type: dict
-    sample: {"cmd_type":"config", 
+    sample: {"cmd_type":"config",
             "commands":"interface lo13, ip add 13.13.13.13 255.255.255.0"
             }
 commands:
