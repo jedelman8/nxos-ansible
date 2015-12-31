@@ -140,6 +140,7 @@ def main():
             commands.append(['snmp-server contact ' + contact])
 
     cmds = ''
+    results = {}
     if commands:
         cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
                         for each in commands if each)

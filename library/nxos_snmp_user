@@ -250,6 +250,8 @@ def main():
             commands.append(command)
 
     cmds = ''
+    results = {}
+
     if commands:
         cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
                         for each in commands if each)
@@ -264,7 +266,6 @@ def main():
     if store:
         existing['group'] = store
 
-    results = {}
     results['proposed'] = proposed
     results['existing'] = existing
     results['state'] = state

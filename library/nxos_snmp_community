@@ -197,6 +197,7 @@ def main():
         commands.append(command)
 
     cmds = ''
+    results = {}
     if commands:
         cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
                         for each in commands if each)
@@ -208,7 +209,6 @@ def main():
             device.config(cmds)
             results['new'] = snmp.get_snmp_community(device, community)
 
-    results = {}
     results['proposed'] = proposed
     results['existing'] = existing
     results['state'] = state
