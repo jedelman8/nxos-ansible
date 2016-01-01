@@ -659,9 +659,9 @@ def main():
     resource, mode, interface_table = get_resource(
                     device, normalized_interface, interface_type, module)
 
-    layer3_info = None
-    layer2_info = None
-    oper = None
+    layer3_info = {}
+    layer2_info = {}
+    oper = {}
 
     if mode == 'layer3':
         layer3_info = get_layer3_info(
