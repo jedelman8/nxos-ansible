@@ -14,7 +14,9 @@
   - name: TEST1
     assert:
       that: 
-        - data.summary
+        - data.packet_loss
+        - data.packets_rx
+        - data.packets_tx
         - data.action
         - data.command
         - data.dest
@@ -43,7 +45,7 @@
 
   - name: TEST3
     assert:
-      that: data.results[{{ item.0 }}].summary.packet_loss == '0.00%'
+      that: data.results[{{ item.0 }}].packet_loss == '0.00%'
     when: data.results[{{ item.0 }}].dest == '8.8.8.8'
     with_indexed_items: data.results
 

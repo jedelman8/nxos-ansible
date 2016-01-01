@@ -118,7 +118,7 @@ command:
     returned: always
     type: string
     sample: "ping 8.8.8.8 count 8 vrf management"
-command:
+count:
     description: Show amount of packets sent
     returned: always
     type: string
@@ -134,12 +134,21 @@ rtt:
     type: dict
     sample: {"avg": "6.264","max":"6.564",
             "min": "5.978"}
-summary:
-    description: Show summary of result
+packets_rx:
+    description: Packets successfully received
     returned: always
-    type: dict
-    sample: {"packet_loss":"0.00%","packets_rx":"8",
-            "packets_tx": "8"}
+    type: string
+    sample: "8"
+packets_tx:
+    description: Packets successfully transmitted
+    returned: always
+    type: string
+    sample: "8"
+packet_loss:
+    description: Percentage of packets lost
+    returned: always
+    type: string
+    sample: "0.00%"
 '''
 
 
@@ -255,12 +264,19 @@ def main():
 
     ping_results, summary, rtt = get_ping_results(device, ping_command, module)
 
+    packet_loss = summary['packet_loss']
+    packets_rx = summary['packets_rx']
+    packets_tx = summary['packets_tx']
+
     results = {}
+
     results['command'] = ping_command
     results['action'] = ping_results[0]
     results['dest'] = destination
     results['count'] = count
-    results['summary'] = summary
+    results['packets_tx'] = packets_tx
+    results['packets_rx'] = packets_rx
+    results['packet_loss'] = packet_loss
     results['rtt'] = rtt
 
     module.exit_json(**results)
