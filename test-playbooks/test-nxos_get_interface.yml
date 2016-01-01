@@ -14,7 +14,7 @@
   - name: TEST1
     assert:
       that:
-        - data['interface']['interface'] == 'Ethernet2/1'
+        - data['resource']['interface'] == 'Ethernet2/1'
 
   - name: "SHOW INTERFACE INFO"
     nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
@@ -23,10 +23,10 @@
   - name: TEST2
     assert:
       that:
-        - data['interface']['type'] == 'ethernet'
+        - data['resource']['type'] == 'ethernet'
 
   - name: "CONFIGURE IP INTERFACE"
-    nxos_ipv4_interface: interface=Ethernet2/1 host={{ inventory_hostname }} ip_addr=10.1.100.12 state=present mask=24
+    nxos_ipv4_interface: interface=Ethernet2/1 host={{ inventory_hostname }} ip_addr=10.1.100.13 state=present mask=24
     register: data
 
   - name: TEST3
@@ -41,6 +41,6 @@
   - name: TEST4
     assert:
       that:
-        - data['interface']['ip_addr'] == '10.1.100.2'
-        - data['interface']['mask'] == '24'
+        - data['layer3_info']['ip_addr'] == '10.1.100.13'
+        - data['layer3_info']['mask'] == '24'
 
