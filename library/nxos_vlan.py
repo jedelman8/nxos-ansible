@@ -238,10 +238,10 @@ def build_commands(vlans, state):
     commands = []
     for vlan in vlans:
         if state == 'present':
-            command = 'vlan {}'.format(vlan)
+            command = 'vlan {0}'.format(vlan)
             commands.append(command)
         elif state == 'absent':
-            command = 'no vlan {}'.format(vlan)
+            command = 'no vlan {0}'.format(vlan)
             commands.append(command)
     return commands
 
@@ -361,7 +361,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
