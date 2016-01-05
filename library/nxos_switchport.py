@@ -90,6 +90,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -541,6 +548,7 @@ def main():
             state=dict(choices=['absent', 'present', 'unconfigured'],
                        default='present'),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(required=False),
             password=dict(required=False),
@@ -557,6 +565,7 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     interface = module.params['interface']
@@ -567,7 +576,7 @@ def main():
     native_vlan = module.params['native_vlan']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     args = dict(interface=interface, mode=mode, access_vlan=access_vlan,
                 native_vlan=native_vlan, trunk_vlans=trunk_vlans)
