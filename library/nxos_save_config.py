@@ -53,6 +53,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -119,7 +126,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command, text=True)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     try:
@@ -157,6 +164,7 @@ def main():
         argument_spec=dict(
             path=dict(default='startup-config'),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -170,12 +178,13 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port= module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     path = module.params['path']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     if path != 'startup-config':
         if ':' not in path:
