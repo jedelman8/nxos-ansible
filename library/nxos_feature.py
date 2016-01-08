@@ -56,6 +56,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -163,7 +170,7 @@ def temp_parsed_data_from_device(device, command):
         data = device.show(command, text=True)
     except:
         module.fail_json(
-            msg='Error sending {}'.format(command),
+            msg='Error sending {0}'.format(command),
             error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -220,6 +227,7 @@ def main():
             feature=dict(type='str', required=True),
             state=dict(choices=['enabled', 'disabled'], required=True),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -233,13 +241,14 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     feature = module.params['feature'].lower()
     state = module.params['state'].lower()
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     available_features = get_available_features(device, feature, module)
 
