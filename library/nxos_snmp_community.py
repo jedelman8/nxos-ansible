@@ -76,7 +76,7 @@ options:
         default: null
         choices: []
         aliases: []
-     port:
+    port:
         description:
             - TCP port to use for communication with switch
         required: false
@@ -159,7 +159,6 @@ except ImportError as ie:
 
 
 def parsed_data_from_device(device, command, module):
-
     try:
         data = device.show(command)
     except CLIError as clie:
@@ -168,7 +167,6 @@ def parsed_data_from_device(device, command, module):
 
     data_dict = xmltodict.parse(data[1])
     body = data_dict['ins_api']['outputs']['output']['body']
-
     return body
 
 
@@ -225,7 +223,6 @@ def get_snmp_groups(device, module):
             group_list.append(group['role_name'])
     except (KeyError, AttributeError):
         return group_list
-
     return group_list
 
 
