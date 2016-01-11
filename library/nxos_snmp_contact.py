@@ -26,7 +26,6 @@ requirements:
     - NX-API 1.0
     - NX-OS 6.1(2)I3(1)
     - pycsco
-    - textfsm
 notes:
     - state=absent removes the contact configuration if it is configured
     - While username and password are not required params, they are
