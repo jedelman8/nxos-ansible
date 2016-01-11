@@ -126,7 +126,7 @@ existing:
     type: dict
     sample:  {}
 end_state:
-    description: k/v pairs of switchport after module execution
+    description: k/v pairs of snmp community after module execution
     returned: always
     type: dict or null
     sample:  {"acl": "None", "group": "network-operator"}
