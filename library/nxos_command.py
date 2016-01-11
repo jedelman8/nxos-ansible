@@ -44,9 +44,15 @@ options:
     command:
         description:
             - Show command as a string or a string of config commands
-              separated by a comma or a list of config
-              commands (complex args in Ansible)
-        required: true
+              separated by a comma
+        required: false
+        default: null
+        choices: []
+        aliases: []
+    command_list:
+        description:
+            - Config commands as a list
+        required: false
         default: null
         choices: []
         aliases: []
@@ -61,7 +67,7 @@ options:
         description:
             - Dictates how data will be returned for show commands.
               Set to true if NX-API doesn't support structured output
-              for a given command
+              for a given command. Doesn't work for config commands.
         required: false
         default: null
         choices: [true,false]
@@ -71,6 +77,13 @@ options:
             - IP Address or hostname (resolvable by Ansible control host)
               of the target NX-API enabled switch
         required: true
+        default: null
+        choices: []
+        aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
         default: null
         choices: []
         aliases: []
@@ -105,117 +118,186 @@ EXAMPLES = '''
 - nxos_command: command='show interface Ethernet1/1' host={{ inventory_hostname }} type=show
 
 # Configure secondary interface on Eth1/2 with command as string
-- nxos_command: command='interface Eth1/2,ip address 5.5.5.5/24 secondary' host={{ inventory_hostname }} type=config
+- nxos_command: command='interface Eth1/2 ; ip address 5.5.5.5/24 secondary ;' host={{ inventory_hostname }} type=config
 
 # Configure secondary interface on Eth1/2 with command as list
 - nxos_command:
     host: "{{ inventory_hostname }}"
     type: config
-    command: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']
+    command_list: ['interface Eth1/2','ip address 5.3.3.5/24 secondary']
 '''
 
+RETURN = '''
+
+proposed:
+    description: proposed changes
+    returned: always
+    type: dict
+    sample: {"cmd_type":"config",
+            "commands":"interface lo13, ip add 13.13.13.13 255.255.255.0"
+            }
+commands:
+    description:
+        - Command list sent to device. This's ALWAY a list.
+    returned: always
+    type: list
+    sample: ["interface lo13, ip add 13.13.13.13 255.255.255.0"]
+changed:
+    description: check to see if a change was made on the device
+    returned: always
+    type: boolean
+    sample: true
+result:
+    description: show the outcome of our commands
+    returned: always
+    type: dict
+    sample: {"changed":false,"commands": "show hostname",
+            "proposed": {"cmd_type": "show","commands": "show hostname",
+            "text": null},"response": [{"body": {"hostname": "N9K2"},
+            "code": "200","input": "show hostname", "msg": "Success"}]}}
+'''
+
+import socket
+import xmltodict
 try:
-    import xmltodict
-    import socket
+    HAS_PYCSCO = True
     from pycsco.nxos.device import Device
     from pycsco.nxos.device import Auth
-    from pycsco.nxos.utils import nxapi_lib
-except ImportError as e:
-    print '*' * 30
-    print e
-    print '*' * 30
+    from pycsco.nxos.error import CLIError
+except ImportError as ie:
+    HAS_PYCSCO = False
+
+
+def normalize_to_list(output):
+    if isinstance(output, dict):
+        return [output]
+    else:
+        return output
+
+
+def parsed_data_from_device(device, command, module, text):
+    try:
+        data = device.show(command, text=text)
+    except CLIError as clie:
+        module.fail_json(msg='Error sending {0}'.format(command),
+                         error=str(clie))
+
+    data_dict = xmltodict.parse(data[1])
+
+    output = normalize_to_list(data_dict['ins_api']['outputs']['output'])
+
+    return output
+
+
+def send_config_command(device, command, module):
+    try:
+        data = device.config(command)
+    except CLIError as clie:
+        module.fail_json(msg='Error sending {0}'.format(command),
+                         error=str(clie))
+
+    data_dict = xmltodict.parse(data[1])
+
+    output = normalize_to_list(data_dict['ins_api']['outputs']['output'])
+
+    return output
+
+
+def send_show_command(device, command, module, text):
+    if text is None:
+        text = False
+    return parsed_data_from_device(device, command, module, text)
+
+
+def command_list_to_string(command_list):
+    """Converts list of commands into proper string for NX-API
+    Args:
+        cmds (list): ordered list of commands
+    Returns:
+        str: string of commands separated by " ; "
+    """
+    if command_list:
+        command = ' ; '.join(command_list)
+        return command
+    else:
+        return ''
 
 
 def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            command=dict(required=True),
+            command=dict(required=False),
+            command_list=dict(required=False),
             text=dict(choices=BOOLEANS, type='bool'),
             type=dict(choices=['show', 'config'], required=True),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str')
         ),
+        required_one_of=[['command', 'command_list']],
+        mutually_exclusive=[['command', 'command_list']],
         supports_check_mode=False
     )
+    if not HAS_PYCSCO:
+        module.fail_json(msg='There was a problem loading pycsco')
 
     auth = Auth(vendor='cisco', model='nexus')
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     command = module.params['command']
-    text = module.params['text'] or False
+    command_list = module.params['command_list']
+    text = module.params['text'] or None
     cmd_type = module.params['type'].lower()
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
-    if cmd_type == 'show':
-        if isinstance(command, list):
-            module.fail_json(msg='Only single show commands are supported. '
-                             + 'Lists are only supported for config changes '
-                             + 'at this time.')
-    if cmd_type == 'config':
-        if text:
-            module.fail_json(msg='Do not use text=true when using '
-                             + 'cmd_type=config. The text param is only '
-                             + 'supported when cmd_type=show')
-
-    args = dict(command=command, text=text, cmd_type=cmd_type)
-    proposed = {}
     changed = False
-    for param, value in args.iteritems():
-        if value:
-            proposed[param] = value
+    cmds = ''
 
-    if cmd_type == 'config':
+    if command:
         if isinstance(command, str):
-            command_list = command.split(',')
-            command = nxapi_lib.cmd_list_to_string(command_list)
-        elif isinstance(command, list):
-            command = nxapi_lib.cmd_list_to_string(command)
-
-    if cmd_type == 'show':
-        data_dict = xmltodict.parse(device.show(command, text=text)[1])
-        get_data = data_dict['ins_api']['outputs']['output']
-        clierror = get_data.get('clierror', None)
-        errmsg = get_data.get('msg', None)
-        if clierror:
-            raise IOError(clierror, errmsg)
+            cmds = command_list_to_string([command])
         else:
-            body = get_data['body']
-    elif cmd_type == 'config':
-        data_dict = xmltodict.parse(device.config(command)[1])
-        changed = True
-        get_data = data_dict['ins_api']['outputs']['output']
-        try:
-            for each in get_data:
-                clierror = each.get('clierror', None)
-                msg = each.get('msg', None)
-                if clierror:
-                    raise IOError(clierror, msg)
-        except AttributeError:
-            clierror = get_data.get('clierror', None)
-            msg = get_data.get('msg', None)
-        except:
-            return data
+            module.fail_json(msg='Only strings are supported with "command"'
+                             '\nIf you want to use a list, use the param'
+                             '" command_list" instead.')
 
-        if clierror:
-            raise IOError(clierror, msg)
+    elif command_list:
+        if isinstance(command_list, list):
+            cmds = command_list_to_string(command_list)
         else:
-            body = get_data
+            module.fail_json(msg='Only Lists are supported with "command_list"'
+                             '\nIf you want to send a single command,'
+                             'use the param "command" instead.')
+
+    proposed = dict(commands=cmds, text=text, cmd_type=cmd_type)
+
+    if cmds:
+        if cmd_type == 'show':
+            response = send_show_command(device, cmds, module, text)
+
+        elif cmd_type == 'config':
+            changed = True
+            response = send_config_command(device, cmds, module)
+    else:
+        module.fail_json(msg='no commands to send. check format')
 
     results = {}
     results['changed'] = changed
     results['proposed'] = proposed
-    results['commands'] = command
-    results['results'] = body
+    results['commands'] = cmds
+    results['response'] = response
 
     module.exit_json(**results)
 
 from ansible.module_utils.basic import *
-main()
+if __name__ == "__main__":
+    main()

@@ -84,6 +84,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -231,10 +238,10 @@ def build_commands(vlans, state):
     commands = []
     for vlan in vlans:
         if state == 'present':
-            command = 'vlan {}'.format(vlan)
+            command = 'vlan {0}'.format(vlan)
             commands.append(command)
         elif state == 'absent':
-            command = 'no vlan {}'.format(vlan)
+            command = 'no vlan {0}'.format(vlan)
             commands.append(command)
     return commands
 
@@ -246,7 +253,7 @@ def get_vlan_config_commands(vlan, vid):
     reverse_value_map = {
         "admin_state": {
             "down": "shutdown",
-            "up": "noshutdown"
+            "up": "no shutdown"
         }
     }
 
@@ -354,7 +361,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -399,6 +406,7 @@ def main():
             state=dict(choices=['present', 'absent'], default='present'),
             admin_state=dict(choices=['up', 'down'], required=False),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -415,6 +423,7 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     vlan_range = module.params['vlan_range']
@@ -425,7 +434,7 @@ def main():
     state = module.params['state']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     changed = False
 
