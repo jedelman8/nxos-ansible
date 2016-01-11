@@ -97,6 +97,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -193,7 +200,7 @@ def temp_parsed_data_from_device(device, command):
         data = device.show(command, text=True)
     except:
         module.fail_json(
-            msg='Error sending {}'.format(command),
+            msg='Error sending {0}'.format(command),
             error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -538,7 +545,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -591,7 +598,7 @@ def get_interface_config_commands(device, interface, intf, existing):
 
     desc = interface.get('description')
     if desc:
-        commands.append('description {}'.format(desc))
+        commands.append('description {0}'.format(desc))
 
     mode = interface.get('mode')
     if mode:
@@ -605,15 +612,15 @@ def get_interface_config_commands(device, interface, intf, existing):
     duplex = interface.get('duplex')
 
     if delta_speed:
-        command = 'speed {}'.format(delta_speed)
+        command = 'speed {0}'.format(delta_speed)
         commands.insert(0, command)
 
     if duplex:
         if not delta_speed:
-            command = 'speed {}'.format(existing.get('speed'))
+            command = 'speed {0}'.format(existing.get('speed'))
             commands.insert(0, command)
 
-        command = 'duplex {}'.format(duplex)
+        command = 'duplex {0}'.format(duplex)
         commands.append(command)
 
     admin_state = interface.get('admin_state')
@@ -686,6 +693,7 @@ def main():
             description=dict(default=None),
             mode=dict(choices=['layer2', 'layer3']),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -700,6 +708,7 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     interface = module.params['interface'].lower()
@@ -711,7 +720,7 @@ def main():
     state = module.params['state']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     changed = False
 
@@ -754,11 +763,11 @@ def main():
     if state == 'absent':
         if intf_type in ['svi', 'loopback', 'portchannel']:
             if is_default != 'DNE':
-                cmds = ['no interface {}'.format(normalized_interface)]
+                cmds = ['no interface {0}'.format(normalized_interface)]
                 commands.append(cmds)
         elif intf_type in ['ethernet']:
             if is_default is False:
-                cmds = ['default interface {}'.format(normalized_interface)]
+                cmds = ['default interface {0}'.format(normalized_interface)]
                 commands.append(cmds)
     elif state == 'present':
         if not existing:
@@ -776,7 +785,7 @@ def main():
                 commands.append(cmds)
     elif state == 'default':
         if is_default is False:
-            cmds = ['default interface {}'.format(normalized_interface)]
+            cmds = ['default interface {0}'.format(normalized_interface)]
             commands.append(cmds)
         elif is_default == 'DNE':
             module.exit_json(msg='interface you are trying to default does'
@@ -799,7 +808,7 @@ def main():
                 admin_state = delta.get('admin_state') or admin_state
                 command = get_admin_state(delta, normalized_interface,
                                           admin_state)
-                device.config('interface {} ; {} ;'.format(normalized_interface,
+                device.config('interface {0} ; {1} ;'.format(normalized_interface,
                                                           command))
                 cmds += command
             changed = True

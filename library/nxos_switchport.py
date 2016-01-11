@@ -90,6 +90,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -319,7 +326,7 @@ def remove_switchport_config_commands(interface, existing, proposed):
     if mode == 'access':
         av_check = existing.get('access_vlan') == proposed.get('access_vlan')
         if av_check:
-            command = 'no switchport access vlan {}'.format(
+            command = 'no switchport access vlan {0}'.format(
                 existing.get('access_vlan'))
             commands.append(command)
     elif mode == 'trunk':
@@ -331,13 +338,13 @@ def remove_switchport_config_commands(interface, existing, proposed):
                     vlans_to_remove = True
                     break
             if vlans_to_remove:
-                command = 'switchport trunk allowed vlan remove {}'.format(
+                command = 'switchport trunk allowed vlan remove {0}'.format(
                     proposed.get('trunk_vlans'))
                 commands.append(command)
         native_check = existing.get(
             'native_vlan') == proposed.get('native_vlan')
         if native_check and proposed.get('native_vlan'):
-            command = 'no switchport trunk native vlan {}'.format(
+            command = 'no switchport trunk native vlan {0}'.format(
                 existing.get('native_vlan'))
             commands.append(command)
     if commands:
@@ -365,7 +372,7 @@ def get_switchport_config_commands(interface, existing, proposed):
     if proposed_mode == 'access':
         av_check = existing.get('access_vlan') == proposed.get('access_vlan')
         if not av_check:
-            command = 'switchport access vlan {}'.format(
+            command = 'switchport access vlan {0}'.format(
                 proposed.get('access_vlan'))
             commands.append(command)
     elif proposed_mode == 'trunk':
@@ -377,13 +384,13 @@ def get_switchport_config_commands(interface, existing, proposed):
                     vlans_to_add = True
                     break
             if vlans_to_add:
-                command = 'switchport trunk allowed vlan add {}'.format(proposed.get('trunk_vlans'))
+                command = 'switchport trunk allowed vlan add {0}'.format(proposed.get('trunk_vlans'))
                 commands.append(command)
 
         native_check = existing.get(
             'native_vlan') == proposed.get('native_vlan')
         if not native_check and proposed.get('native_vlan'):
-            command = 'switchport trunk native vlan {}'.format(
+            command = 'switchport trunk native vlan {0}'.format(
                 proposed.get('native_vlan'))
             commands.append(command)
     if commands:
@@ -495,7 +502,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -541,6 +548,7 @@ def main():
             state=dict(choices=['absent', 'present', 'unconfigured'],
                        default='present'),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(required=False),
             password=dict(required=False),
@@ -557,6 +565,7 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     interface = module.params['interface']
@@ -567,7 +576,7 @@ def main():
     native_vlan = module.params['native_vlan']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     args = dict(interface=interface, mode=mode, access_vlan=access_vlan,
                 native_vlan=native_vlan, trunk_vlans=trunk_vlans)
