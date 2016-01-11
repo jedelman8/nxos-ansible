@@ -41,6 +41,6 @@
   - name: TEST4
     assert:
       that:
-        - data['layer3_info']['ip_addr'] == '10.1.100.13'
-        - data['layer3_info']['mask'] == '24'
+        - data['l3_config']['ip_addr'] == '10.1.100.13'
+        - data['l3_config']['mask'] == '24'
 
