@@ -56,6 +56,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -89,14 +96,64 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-interface:
+resource:
     description:
         - Show multiple information about the interface.
     returned: always
     type: dict
-    sample: {"interface":"eth2/1","ip_addr": "10.10.50.1",
-            "mask": "24","subnet": "10.10.50.0","type": "ethernet",
+    sample: {"admin_state": "up", "duplex": "auto",
+            "interface": "Ethernet2/1", "mode": "layer3",
+            "speed": "auto", "type": "ethernet"}
+l3_config:
+    description:
+        - Show layer3 information associated to the interface.
+    returned: always
+    type: dict
+    sample: {"interface": "ethernet2/1", "ip_addr": "10.1.100.13",
+            "mask": "24", "subnet": "10.1.100.0", "type": "ethernet",
             "vrf": "test"}
+l2_config:
+    description:
+        - Show layer2 information associated to the interface.
+    returned: always
+    type: dict
+    sample: {"access_vlan": "1", "access_vlan_name": "default",
+            "interface": "port-channel100", "mode": "access",
+            "native_vlan": "1", "native_vlan_name": "default",
+            "switchport": "Enabled", "trunk_vlans": "1-4094"}
+oper:
+    description:
+        - Show interface stats.
+    returned: always
+    type: dict
+    sample: {"admin_state": "up", "babbles": "0",
+            "bad_eth": "0", "bad_proto": "0",
+            "bia_addr": "0000.0000.0000", "bw": "100000",
+            "clear_counters": "never", "coll": "0",
+            "crc": "0", "deferred": "0", "delay": "10",
+            "dribble": "0", "duplex": "auto", "ethertype": "0x8100",
+            "frame": "0", "giants": "0", "hw_addr": "0000.0000.0000",
+            "hw_desc": "Port-Channel", "ignored": "0",
+            "in_flowctrl": "off", "in_ifdown_drops": "0",
+            "inbcast": "0", "inbytes": "0", "indiscard": "0",
+            "inerr": "0", "inmcast": "0", "inpause": "0",
+            "inpkts": "0", "inrate1_bits": "0", "inrate1_pkts": "0",
+            "interface": "port-channel100", "inucast": "0",
+            "jumbo_inpkts": "0", "jumbo_outpkts": "0",
+            "latecoll": "0", "load_interval1_rx": "30",
+            "load_interval1_tx": "30", "lostcarrier": "0", "mdix": "off",
+            "medium": "broadcast", "members": "Eth1/28, Eth1/29",
+            "mode": "access", "mtu": "1500", "nobuf": "0",
+            "nocarrier": "0", "out_flowctrl": "off", "outbcast": "0",
+            "outbytes": "0", "outdiscard": "0", "outerr": "0",
+            "outmcast": "0", "outpause": "0", "outpkts": "0",
+            "outrate1_bits": "0", "outrate1_pkts": "0",
+            "outucast": "0", "overrun": "0", "reliability": "255",
+            "reset_cntr": "0", "runts": "0", "rx_load": "1",
+            "speed": "auto-speed", "state": "down",
+            "state_desc": "No operational members", "storm_supp": "0",
+            "swt_monitor": "off", "tx_load": "1", "underrun": "0",
+            "watchdog": "0"}
 '''
 
 import socket
@@ -559,7 +616,7 @@ def get_resource(device, normalized_interface, interface_type, module):
     return resource, mode, interface_table
 
 
-def get_layer3_info(device, interface, interface_type, module):
+def get_l3_config(device, interface, interface_type, module):
     interface_info = {}
     command = 'show ip interface {0}'.format(interface)
     body = parsed_data_from_device(device, command, module)
@@ -587,7 +644,7 @@ def get_layer3_info(device, interface, interface_type, module):
     return interface_info
 
 
-def get_layer2_info(device, port, module):
+def get_l2_config(device, port, module):
     """Gets current config of L2 switchport
     Args:
         device (Device): This is the device object of an NX-API enabled device
@@ -629,6 +686,7 @@ def main():
             detail=dict(choices=BOOLEANS, type='bool'),
             protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
+            port=dict(required=False, type='int', default=None),
             username=dict(type='str'),
             password=dict(type='str'),
         ),
@@ -643,10 +701,11 @@ def main():
     protocol = module.params['protocol']
     detail = module.params['detail'] or False
     host = socket.gethostbyname(module.params['host'])
+    port = module.params['port']
     interface = module.params['interface'].lower()
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     interface_type = get_interface_type(interface)
     normalized_interface = normalize_interface(interface)
@@ -659,15 +718,15 @@ def main():
     resource, mode, interface_table = get_resource(
                     device, normalized_interface, interface_type, module)
 
-    layer3_info = {}
-    layer2_info = {}
+    l3_config = {}
+    l2_config = {}
     oper = {}
 
     if mode == 'layer3':
-        layer3_info = get_layer3_info(
+        l3_config = get_l3_config(
                         device, interface, interface_type, module)
     elif mode == 'layer2':
-        layer2_info = get_layer2_info(
+        l2_config = get_l2_config(
                         device, interface, module)
 
     if detail:
@@ -677,8 +736,8 @@ def main():
     results = {}
 
     results['resource'] = resource
-    results['layer3_info'] = layer3_info
-    results['layer2_info'] = layer2_info
+    results['l3_config'] = l3_config
+    results['l2_config'] = l2_config
     results['oper'] = oper
 
     module.exit_json(**results)
