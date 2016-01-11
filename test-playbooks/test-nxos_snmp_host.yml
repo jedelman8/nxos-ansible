@@ -1,0 +1,149 @@
+---
+
+- name: NXOS_SNMP_HOST TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "ENSURE SNMP HOST IS CONFIGURED"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING snmp_type=trap state=present vrf_filter=test_vrf vrf=management host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 1"
+    assert:
+      that:
+        - data.end_state['community'] == 'TESTING'
+        - data.end_state['snmp_type'] == 'trap'
+        - data.end_state['vrf_filter'][{{ item.0 }}] == 'test_vrf'
+        - data.end_state['vrf'] == 'management'
+    ignore_errors: true
+    with_indexed_items: data.end_state['vrf_filter']
+
+  - name: "ENSURE SNMP HOST IS NOT CONFIGURED"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING snmp_type=trap state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 2"
+    assert:
+      that:
+        - data.end_state == {}
+
+  - name: "ENSURE FAIL DUE TO MISSING REQUIRED PARAMS"
+    nxos_snmp_host: community=TESTING snmp_type=trap state=present vrf_filter=test_vrf vrf=management host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 3"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE FAIL DUE TO WRONG PARAMS COMBINATION"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING snmp_type=inform state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 4"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE FAIL DUE TO WRONG PARAMS COMBINATION"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING v3=priv state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 5"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE FAIL DUE TO WRONG PARAMS COMBINATION"
+    nxos_snmp_host: snmp_host=3.3.3.3 state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 6"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE FAIL DUE TO WRONG PARAMS COMBINATION"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING version=v3 state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: "TEST 7"
+    assert:
+      that:
+        - data | failed
+
+  - name: "ENSURE HOST IS CONFIGURED WITH SOURCE INTERFACE"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING src_intf=loopback10 state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 8"
+    assert:
+      that:
+        - data.end_state['community'] == 'TESTING'
+        - data.end_state['snmp_type'] == 'trap'
+        - data.end_state['src_intf'] == 'loopback10'
+        - data.end_state['udp'] == '162'
+        - data.end_state['v3'] == 'noauth'
+        - data.end_state['version'] == 'v2c'
+
+  - name: "ENSURE HOST IS REMOVED"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING src_intf=loopback10 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 9"
+    assert:
+      that:
+        - data | changed
+        - data.end_state == {}
+
+  - name: "ENSURE HOST CONFIGURED WITH VRF AND UDP PARAMS"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING vrf=test_vrf udp=162 state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 10"
+    assert:
+      that:
+        - data.end_state['vrf'] == 'test_vrf'
+        - data.end_state['udp'] == '162'
+
+  - name: "ENSURE HOST CONFIGURED WITH A VRF FILTER"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING vrf_filter=test_vrf state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 11"
+    assert:
+      that:
+        - data | changed
+        - data.end_state['vrf_filter'][{{ item.0 }}] == 'test_vrf'
+    ignore_errors: true
+    with_indexed_items: data.end_state['vrf_filter']
+
+  - name: "ENSURE HOST CONFIGURED WITH A ONE MORE VRF FILTER"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING vrf_filter=another_test_vrf state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 12"
+    assert:
+      that:
+        - data | changed
+        - data.end_state['vrf_filter'][{{ item.0 }}] == 'another_test_vrf'
+    ignore_errors: true
+    with_indexed_items: data.end_state['vrf_filter']
+
+  - name: "ATTEMPT TO CONFIGURED THE SAME VRF FILTER"
+    nxos_snmp_host: snmp_host=3.3.3.3 community=TESTING vrf_filter=test_vrf state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: "TEST 13"
+    assert:
+      that:
+        - data.changed == false
+
