@@ -35,42 +35,32 @@
       that:
         - data | failed
 
-  - name: ENSURE VLAN EXISTS WITH DESIRED ADMIN STATE / NAME
-    nxos_vlan: vlan_id=211 host={{ inventory_hostname }} admin_state=down name=TESTING211
+  - name: PREPARING THE DEVICE
+    nxos_command: command="vlan 205 ; shutdown ; name TESTING205 ; exit ;" host={{ inventory_hostname }} type=config
     register: data
-
-  - name: TEST 4
-    assert:
-      that:
-        - data | changed
 
   - name: "CONFIRM VLAN EXISTS WITH DESIRED NAME"
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 5
+  - name: TEST 4
     assert:
-      that: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING211'
-    when: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '211'
+      that: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING205'
+    when: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '205'
     with_indexed_items: data.ansible_facts.vlan_list
 
-  - name: ENSURE VLAN EXISTS WITH DESIRED ADMIN STATE / NAME
-    nxos_vlan: vlan_id=212 host={{ inventory_hostname }} admin_state=down name=TESTING212
+  - name: PREPARING THE DEVICE
+    nxos_command: command="vlan 206 ; shutdown ; name TESTING206 ; exit ;" host={{ inventory_hostname }} type=config
     register: data
-
-  - name: TEST 6
-    assert:
-      that:
-        - data | changed
 
   - name: "CONFIRM VLAN EXISTS WITH DESIRED ID"
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 7
+  - name: TEST 5
     assert:
-      that: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '212'
-    when: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING212'
+      that: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '206'
+    when: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING206'
     with_indexed_items: data.ansible_facts.vlan_list
 
   - name: "CONFIRM ALL THE KEYS, INCLUDING DETAILED INFO, EXIST INSIDE RESULTS"
@@ -109,4 +99,12 @@
         - data.ansible_facts.power_supply_info
         - data.ansible_facts.rr 
         - data.ansible_facts.vlan_list
+
+  - name: "CLEANING UP CONFIGURATION"
+    nxos_command:
+      host: "{{ inventory_hostname }}"
+      type: config
+      command_list: 
+        - 'no vlan 205'
+        - 'no vlan 206'
 
