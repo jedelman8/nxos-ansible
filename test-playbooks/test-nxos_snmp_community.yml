@@ -11,12 +11,11 @@
     nxos_snmp_community: community=TESTING7 group=network-operator state=present host={{ inventory_hostname }}
     register: data
 
-  - debug: var=data
-
   - name: "TEST 1"
     assert:
       that:
         - data.changed == true
+        - data.end_state['group'] == 'network-operator'
 
   - name: "RE-ENSURE SNMP COMMUNITY IS CONFIGURED"
     nxos_snmp_community: community=TESTING7 group=network-operator state=present host={{ inventory_hostname }}
@@ -26,6 +25,7 @@
     assert:
       that:
         - data.changed == false
+        - data.existing['group'] == 'network-operator'
 
   - name: "ENSURE SNMP COMMUNITY IS NOT CONFIGURED"
     nxos_snmp_community: community=TESTING7 group=network-operator state=absent host={{ inventory_hostname }}
@@ -35,6 +35,7 @@
     assert:
       that:
         - data.changed == true
+        - data.end_state == {}
 
   - name: "ENSURE SNMP COMMUNITY IS CONFIGURED WITH ACCESS RO"
     nxos_snmp_community: community=TESTING9 access=ro state=present host={{ inventory_hostname }}
@@ -44,6 +45,7 @@
     assert:
       that:
         - data.changed == true
+        - data.end_state['group'] == 'network-operator'
 
   - name: "ENSURE SNMP COMMUNITY IS CONFIGURED WITH ACCESS RW"
     nxos_snmp_community: community=TESTING9 access=rw state=present host={{ inventory_hostname }}
@@ -53,6 +55,7 @@
     assert:
       that:
         - data.changed == true
+        - data.end_state['group'] == 'network-admin'
 
   - name: "ENSURE SNMP COMMUNITY IS NOT CONFIGURED"
     nxos_snmp_community: community=TESTING9 access=rw state=absent host={{ inventory_hostname }}
@@ -71,6 +74,7 @@
     assert:
       that:
         - data.changed == true
+        - data.end_state['acl'] == 'wrong_testing_acl'
 
   - name: "ENSURE SNMP COMMUNITY IS CONFIGURED WITH PROPER ACL"
     nxos_snmp_community: community=TESTING9 access=rw acl=correct_testing_acl state=present host={{ inventory_hostname }}
@@ -80,6 +84,7 @@
     assert:
       that:
         - data.changed == true
+        - data.end_state['acl'] == 'correct_testing_acl'
 
   - name: "ENSURE FAILS DUE TO MISSING PARAMS"
     nxos_snmp_community: community=TESTING10 state=present host={{ inventory_hostname }}
