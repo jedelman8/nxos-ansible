@@ -1,0 +1,7 @@
+[all:vars]
+username=cisco
+password=!cisco123!
+
+[spine]
+n9k1
+n9k2

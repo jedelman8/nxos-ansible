@@ -1,0 +1,18 @@
+---
+
+- name: neighbors testing
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "Get LLDP neighbors"
+    nxos_get_neighbors: type=lldp host={{ inventory_hostname }}
+
+  - debug: var=neighbors
+
+  - name: "Get CDP neighbors"
+    nxos_get_neighbors: type=cdp host={{ inventory_hostname }}
+
+  - debug: var=neighbors

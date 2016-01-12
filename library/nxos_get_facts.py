@@ -49,6 +49,13 @@ options:
         default: null
         choices: []
         aliases: []
+    port:
+        description:
+            - TCP port to use for communication with switch
+        required: false
+        default: null
+        choices: []
+        aliases: []
     username:
         description:
             - Username used to login to the switch
@@ -116,7 +123,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -272,6 +279,7 @@ def main():
         argument_spec=dict(
             detail=dict(choices=BOOLEANS, type='bool'),
             protocol=dict(choices=['http', 'https'], default='http'),
+            port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
             password=dict(type='str'),
@@ -285,12 +293,13 @@ def main():
     username = module.params['username'] or auth.username
     password = module.params['password'] or auth.password
     protocol = module.params['protocol']
+    port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
     detail = module.params['detail']
 
     device = Device(ip=host, username=username, password=password,
-                    protocol=protocol)
+                    protocol=protocol, port=port)
 
     show_version_command = 'show version'
     interface_command = 'show interface status'

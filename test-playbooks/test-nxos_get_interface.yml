@@ -38,4 +38,3 @@
       that:
         - data['l3_config']['ip_addr'] == '10.1.100.13'
         - data['l3_config']['mask'] == '24'
-
