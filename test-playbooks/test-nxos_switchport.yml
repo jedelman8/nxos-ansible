@@ -12,6 +12,61 @@
       # eth1/6 needs to be a member of a port-channel
       # eth2/4 needs to be a Layer 3 port
 
+      - name: PREPARING THE DEVICE ENSURING VLANS EXIST
+        nxos_command:
+          host: "{{ inventory_hostname }}"
+          type: config
+          command_list: 
+           - 'vlan 2'
+           - 'vlan 3'
+           - 'vlan 4'
+           - 'vlan 5'
+           - 'vlan 6'
+           - 'vlan 7'
+           - 'vlan 8'
+           - 'vlan 9'
+           - 'vlan 10'
+           - 'vlan 11'
+           - 'vlan 12'
+           - 'vlan 13'
+           - 'vlan 14'
+           - 'vlan 15'
+           - 'vlan 16'
+           - 'vlan 17'
+           - 'vlan 18'
+           - 'vlan 19'
+           - 'vlan 20'
+           - 'vlan 21'
+           - 'vlan 22'
+           - 'vlan 23'
+           - 'vlan 24'
+           - 'vlan 25'
+           - 'vlan 26'
+           - 'vlan 27'
+           - 'vlan 28'
+           - 'vlan 29'
+           - 'vlan 30'
+           - 'vlan 31'
+           - 'vlan 32'
+           - 'vlan 33'
+           - 'vlan 34'
+           - 'vlan 35'
+           - 'vlan 36'
+           - 'vlan 37'
+           - 'vlan 38'
+           - 'vlan 39'
+           - 'vlan 40'
+           - 'vlan 41'
+           - 'vlan 42'
+           - 'vlan 43'
+           - 'vlan 44'
+           - 'vlan 45'
+           - 'vlan 46'
+           - 'vlan 47'
+           - 'vlan 48'
+           - 'vlan 49'
+           - 'vlan 50'
+
       - name: ENSURE VLAN 10 EXISTS
         nxos_vlan: vlan_range=2-50 host={{ inventory_hostname }} state=present
 
