@@ -33,7 +33,7 @@
     nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
     register: data
 
-  - name: TEST4
+  - name: TEST3
     assert:
       that:
         - data['l3_config']['ip_addr'] == '10.1.100.13'
