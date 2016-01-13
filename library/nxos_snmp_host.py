@@ -198,7 +198,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -301,7 +301,7 @@ def config_snmp_host(delta, proposed, existing, module):
     commands = []
     command_builder = []
     host = proposed['snmp_host']
-    cmd = 'snmp-server host {}'.format(proposed['snmp_host'])
+    cmd = 'snmp-server host {0}'.format(proposed['snmp_host'])
 
     snmp_type = delta.get('snmp_type', None)
     version = delta.get('version', None)
@@ -321,7 +321,7 @@ def config_snmp_host(delta, proposed, existing, module):
             elif version == 'v3':
                 vn = '3'
 
-            version_string = 'version {}'.format(vn)
+            version_string = 'version {0}'.format(vn)
             command_builder.append(version_string)
 
         if ver:
