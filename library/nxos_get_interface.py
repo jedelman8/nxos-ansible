@@ -191,7 +191,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
