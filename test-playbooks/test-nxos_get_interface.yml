@@ -25,14 +25,13 @@
       that:
         - data['resource']['type'] == 'ethernet'
 
-  - name: "CONFIGURE IP INTERFACE"
-    nxos_ipv4_interface: interface=Ethernet2/1 host={{ inventory_hostname }} ip_addr=10.1.100.13 state=present mask=24
-    register: data
-
-  - name: TEST3
-    assert:
-      that:
-        - data | changed
+  # PREP FOR NEXT TASK
+  - nxos_command:
+      command_list:
+        - interface Eth2/1
+        - ip address 10.1.100.13/24
+      host: "{{ inventory_hostname }}"
+      type: config
 
   - name: "ENSURE CONFIGURATION HAS BEEN PERFORMED"
     nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
