@@ -142,7 +142,7 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command, text=True)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {}'.format(command),
+        module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
@@ -233,7 +233,7 @@ def main():
             commands.append('no snmp-server contact')
     elif state == 'present':
         if not existing or existing['contact'] != contact:
-            commands.append('snmp-server contact {}'.format(contact))
+            commands.append('snmp-server contact {0}'.format(contact))
 
     cmds = command_list_to_string(commands)
     if cmds:
