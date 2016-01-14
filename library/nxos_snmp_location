@@ -140,6 +140,7 @@ def main():
             commands.append(['snmp-server location ' + location])
 
     cmds = ''
+    results = {}
     if commands:
         cmds = ' '.join(nxapi_lib.cmd_list_to_string(each)
                         for each in commands if each)
@@ -150,7 +151,6 @@ def main():
             changed = True
             device.config(cmds)
 
-    results = {}
     results['proposed'] = location
     results['existing'] = existing
     results['new'] = snmp.get_snmp_location(device)

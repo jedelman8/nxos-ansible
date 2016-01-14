@@ -192,7 +192,7 @@ def main():
 
     for command, arg in OPTIONS.iteritems():
         if arg:
-            ping_string += ' {} {}'.format(command, arg)
+            ping_string += ' {0} {1}'.format(command, arg)
 
     ping_results = device.show(ping_string, text=True)
     ping_d = xmltodict.parse(ping_results[1])
