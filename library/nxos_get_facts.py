@@ -229,29 +229,17 @@ def get_fan_facts(body):
 
 
 def get_vlan_facts(body):
-    vlan_facts = []
+    vlan_list = []
     vlan_table = body['TABLE_vlanbriefxbrief']['ROW_vlanbriefxbrief']
-
-    key_map = {
-                "vlanshowbr-vlanid-utf": "vlan_id",
-                "vlanshowbr-vlanname": "name",
-                "vlanshowbr-shutstate": "admin_state",
-                "vlanshowbr-vlanstate": "state",
-                "vlanshowplist-ifidx": "interfaces"
-            }
 
     if isinstance(vlan_table, dict):
         vlan_table = [vlan_table]
 
     for each in vlan_table:
-        mapped_vlan_facts = apply_key_map(key_map, each)
-        try:
-            if mapped_vlan_facts['interfaces']:
-                mapped_vlan_facts['interfaces'] = mapped_vlan_facts['interfaces'].split(',')
-        except KeyError:
-            mapped_vlan_facts['interfaces'] = []
-        vlan_facts.append(mapped_vlan_facts)
-    return vlan_facts
+        vlan = str(each.get('vlanshowbr-vlanid-utf', None))
+        if vlan:
+            vlan_list.append(vlan)
+    return vlan_list
 
 
 def main():

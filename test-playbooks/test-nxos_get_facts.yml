@@ -26,29 +26,15 @@
 
   - name: TEST 2
     assert:
-      that: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING205'
-    when: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '205'
-    with_indexed_items: data.ansible_facts.vlan_list
-
-  - name: PREPARING THE DEVICE
-    nxos_command: command="vlan 206 ; shutdown ; name TESTING206 ; exit ;" host={{ inventory_hostname }} type=config
-    register: data
-
-  - name: CONFIRM VLAN EXISTS WITH DESIRED ID
-    nxos_get_facts: host={{ inventory_hostname }}
-    register: data
-
-  - name: TEST 3
-    assert:
-      that: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '206'
-    when: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING206'
+      that: data.ansible_facts.vlan_list[{{ item.0 }}] == '205'
+    ignore_errors: true
     with_indexed_items: data.ansible_facts.vlan_list
 
   - name: CONFIRM ALL THE KEYS EXIST INSIDE RESULTS
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 4
+  - name: TEST 3
     assert:
       that: 
         - data.ansible_facts.hostname
@@ -68,5 +54,4 @@
       type: config
       command_list: 
         - 'no vlan 205'
-        - 'no vlan 206'
 
