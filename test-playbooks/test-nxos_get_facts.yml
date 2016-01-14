@@ -7,43 +7,24 @@
 
 
   tasks:
-  - name: "RETRIEVE FACTS"
+  - name: RETRIEVE FACTS
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 1"
+  - name: TEST 1
     assert:
       that:
         - data
-
-  - name: "RETRIEVE DETAILED FACTS"
-    nxos_get_facts: host={{ inventory_hostname }} detail=true
-    register: data
-
-  - name: "TEST 2"
-    assert:
-      that:
-        - data
-
-  - name: "ENSURE FAIL DUE TO WRONG PARAM VALUE"
-    nxos_get_facts: host={{ inventory_hostname }} detail=present
-    register: data
-    ignore_errors: true
-
-  - name: "TEST 3"
-    assert:
-      that:
-        - data | failed
 
   - name: PREPARING THE DEVICE
     nxos_command: command="vlan 205 ; shutdown ; name TESTING205 ; exit ;" host={{ inventory_hostname }} type=config
     register: data
 
-  - name: "CONFIRM VLAN EXISTS WITH DESIRED NAME"
+  - name: CONFIRM VLAN EXISTS WITH DESIRED NAME
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 4
+  - name: TEST 2
     assert:
       that: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING205'
     when: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '205'
@@ -53,44 +34,25 @@
     nxos_command: command="vlan 206 ; shutdown ; name TESTING206 ; exit ;" host={{ inventory_hostname }} type=config
     register: data
 
-  - name: "CONFIRM VLAN EXISTS WITH DESIRED ID"
+  - name: CONFIRM VLAN EXISTS WITH DESIRED ID
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 5
+  - name: TEST 3
     assert:
       that: data.ansible_facts.vlan_list[{{ item.0 }}].vlan_id == '206'
     when: data.ansible_facts.vlan_list[{{ item.0 }}].name == 'TESTING206'
     with_indexed_items: data.ansible_facts.vlan_list
 
-  - name: "CONFIRM ALL THE KEYS, INCLUDING DETAILED INFO, EXIST INSIDE RESULTS"
-    nxos_get_facts: host={{ inventory_hostname }} detail=true
-    register: data
-
-  - name: "TEST 6"
-    assert:
-      that: 
-        - data.ansible_facts.detailed_interface
-        - data.ansible_facts.hostname
-        - data.ansible_facts.interfaces
-        - data.ansible_facts.fan_info
-        - data.ansible_facts.kickstart
-        - data.ansible_facts.module
-        - data.ansible_facts.os
-        - data.ansible_facts.platform
-        - data.ansible_facts.power_supply_info
-        - data.ansible_facts.rr 
-        - data.ansible_facts.vlan_list
-
-  - name: "CONFIRM ALL THE REQUIRED KEYS EXIST INSIDE RESULTS"
+  - name: CONFIRM ALL THE KEYS EXIST INSIDE RESULTS
     nxos_get_facts: host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 7"
+  - name: TEST 4
     assert:
       that: 
         - data.ansible_facts.hostname
-        - data.ansible_facts.interfaces
+        - data.ansible_facts.interfaces_list
         - data.ansible_facts.fan_info
         - data.ansible_facts.kickstart
         - data.ansible_facts.module
@@ -100,7 +62,7 @@
         - data.ansible_facts.rr 
         - data.ansible_facts.vlan_list
 
-  - name: "CLEANING UP CONFIGURATION"
+  - name: CLEANING UP CONFIGURATION
     nxos_command:
       host: "{{ inventory_hostname }}"
       type: config
