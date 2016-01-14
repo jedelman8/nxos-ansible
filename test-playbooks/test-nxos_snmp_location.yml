@@ -7,22 +7,22 @@
 
 
   tasks:
-  - name: "ENSURE SNMP LOCATION IS CONFIGURED"
+  - name: ENSURE SNMP LOCATION IS CONFIGURED
     nxos_snmp_location: location=Test state=present host={{ inventory_hostname }} 
     register: data
 
-  - name: "TEST 1"
+  - name: TEST 1
     assert:
       that:
         - data.changed == true
         - data.proposed['location'] == 'Test'
         - data.end_state['location'] == 'Test'
 
-  - name: "OVERWRIGHT SNMP LOCATION INFORMATION"
+  - name: OVERWRIGHT SNMP LOCATION INFORMATION
     nxos_snmp_location: location=New_Test host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 2"
+  - name: TEST 2
     assert:
       that:
         - data.changed == True
@@ -30,31 +30,31 @@
         - data.proposed['location'] == 'New_Test'
         - data.end_state['location'] == 'New_Test'
 
-  - name: "ENSURE SNMP LOCATION IS REMOVED (NOT PRESENT)"
+  - name: ENSURE SNMP LOCATION IS REMOVED (NOT PRESENT)
     nxos_snmp_location: location=Test state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 3"
+  - name: TEST 3
     assert:
       that:
         - data.changed == false
 
-  - name: "ENSURE SNMP LOCATION IS REMOVED"
+  - name: ENSURE SNMP LOCATION IS REMOVED
     nxos_snmp_location: location=New_Test state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 4"
+  - name: TEST 4
     assert:
       that:
         - data.changed == true
         - data.end_state == {}
 
-  - name: "ENSURE FAILS DUE TO MISSING REQUIRED PARAM"   
+  - name: ENSURE FAILS DUE TO MISSING REQUIRED PARAM 
     nxos_snmp_location: state=present host={{ inventory_hostname }}
     register: data
     ignore_errors: true
 
-  - name: "TEST 5"
+  - name: TEST 5
     assert:
       that:
         - data | failed

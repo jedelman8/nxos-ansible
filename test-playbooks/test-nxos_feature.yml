@@ -7,109 +7,109 @@
 
 
   tasks:
-  - name: "ENSURE LACP IS ENABLED"
+  - name: ENSURE LACP IS ENABLED
     nxos_feature: feature=lacp state=enabled host={{ inventory_hostname }}
     register: lacp
 
-  - name: "TEST 1"
+  - name: TEST 1
     assert:
       that:
         - lacp.end_state.state == 'enabled'
 
-  - name: "ENSURE RIP IS DISABLED"
+  - name: ENSURE RIP IS DISABLED
     nxos_feature: feature=rip state=disabled host={{ inventory_hostname }}
     register: rip
 
-  - name: "TEST 2"
+  - name: TEST 2
     assert:
       that:
         - rip.end_state.state == 'disabled'
 
-  - name: "IDEMPOTENCY CHECK"
+  - name: IDEMPOTENCY CHECK
     nxos_feature: feature=rip state=disabled host={{ inventory_hostname }}
     register: rip
 
-  - name: "TEST 3"
+  - name: TEST 3
     assert:
       that:
         - rip.changed == false
         - rip.end_state.state == 'disabled'
 
-  - name: "ENSURE VPC IS ENABLED"
+  - name: ENSURE VPC IS ENABLED
     nxos_feature: feature=vpc state=enabled host={{ inventory_hostname }}
     register: vpc
 
-  - name: "TEST 4"
+  - name: TEST 4
     assert:
       that:
         - lacp.end_state.state == 'enabled'
 
-  - name: "ENSURE EIGRP IS DISABLED"
+  - name: ENSURE EIGRP IS DISABLED
     nxos_feature: feature=eigrp state=disabled host={{ inventory_hostname }}
     register: eigrp
 
-  - name: "TEST 5"
+  - name: TEST 5
     assert:
       that:
         - eigrp.proposed.state == 'disabled'
         - eigrp.end_state.state == 'disabled'
 
-  - name: "IDEMPOTENCY CHECK"
+  - name: IDEMPOTENCY CHECK
     nxos_feature: feature=eigrp state=disabled host={{ inventory_hostname }}
     register: eigrp
 
-  - name: "TEST 6"
+  - name: TEST 6
     assert:
       that:
         - eigrp.changed == false
         - eigrp.end_state.state == 'disabled'
 
-  - name: "ENSURE FAIL WITH UNSUPPORTED FEATURE"
+  - name: ENSURE FAIL WITH UNSUPPORTED FEATURE
     nxos_feature: feature=test state=disabled host={{ inventory_hostname }}
     register: test
     ignore_errors: true
 
-  - name: "TEST 7"
+  - name: TEST 7
     assert:
       that:
         - test | failed
 
-  - name: "ENSURE DHCP IS DISABLED"
+  - name: ENSURE DHCP IS DISABLED
     nxos_feature: feature=dhcp state=disabled host={{ inventory_hostname }}
     register: dhcp
 
-  - name: "TEST 8"
+  - name: TEST 8
     assert:
       that:
         - dhcp.proposed.state == 'disabled'
         - dhcp.end_state.state == 'disabled'
 
-  - name: "ENSURE DHCP IS ENABLED"
+  - name: ENSURE DHCP IS ENABLED
     nxos_feature: feature=dhcp state=enabled host={{ inventory_hostname }}
     register: dhcp
 
-  - name: "TEST 9"
+  - name: TEST 9
     assert:
       that:
         - dhcp.existing.state == 'disabled'
         - dhcp.proposed.state == 'enabled'
         - dhcp.end_state.state == 'enabled'
 
-  - name: "IDEMPOTENCY CHECK"
+  - name: IDEMPOTENCY CHECK
     nxos_feature: feature=dhcp state=enabled host={{ inventory_hostname }}
     register: dhcp
 
-  - name: "TEST 10"
+  - name: TEST 10
     assert:
       that:
         - dhcp.changed == false
 
-  - name: "ENSURE FAIL WITH UNSUPPORTED STATE"
+  - name: ENSURE FAIL WITH UNSUPPORTED STATE
     nxos_feature: feature=bgp state=ok host={{ inventory_hostname }}
     register: test
     ignore_errors: true
 
-  - name: "TEST 11"
+  - name: TEST 11
     assert:
       that:
         - test | failed

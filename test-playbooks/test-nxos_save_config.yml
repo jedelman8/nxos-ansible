@@ -7,7 +7,7 @@
 
 
   tasks:
-  - name: "SAVE CONFIG"
+  - name: SAVE CONFIG
     nxos_save_config: host={{ inventory_hostname }}
     register: data
 
@@ -17,7 +17,7 @@
         - data | changed
         - data.status == 'successful'
 
-  - name: "ENSURE FAILS DUE TO BAD PATH FORMAT"
+  - name: ENSURE FAILS DUE TO BAD PATH FORMAT
     nxos_save_config: path='bootflash=configs/my_config_test.cfg' host={{ inventory_hostname }}
     register: data
     ignore_errors: true
@@ -28,7 +28,7 @@
         - data | failed
 
   # In order to be successful, the file shouldn't exist yet.
-  - name: "SAVE CONFIG TO PATH"
+  - name: SAVE CONFIG TO PATH
     nxos_save_config: path='bootflash:configs/my_config_testing1.cfg' host={{ inventory_hostname }}
     register: data
 
@@ -39,7 +39,7 @@
         - data.path == 'bootflash:configs/my_config_testing1.cfg'
 
   # In order to be successful, the file should already exist. 
-  - name: "ENSURE FAILS DUE TO ALREADY EXISTING FILE"
+  - name: ENSURE FAILS DUE TO ALREADY EXISTING FILE
     nxos_save_config: path='bootflash:configs/my_config_test.cfg' host={{ inventory_hostname }}
     register: data
     ignore_errors: true

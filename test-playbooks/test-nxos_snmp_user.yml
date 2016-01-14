@@ -1,0 +1,14 @@
+---
+
+- name: NXOS_SNMP_USER TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: "ENSURE SNMP USER IS CONFIGURED"
+    nxos_snmp_user: user=New_Test group=network-operator encrypt=true privacy=test state=present host={{ inventory_hostname }}
+    register: data
+
+  - debug: var=data
