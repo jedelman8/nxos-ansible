@@ -495,7 +495,6 @@ def apply_key_map(key_map, table):
     return new_dict
 
 
-
 def apply_value_map(value_map, resource):
     for key, value in value_map.items():
         resource[key] = value[resource.get(key)]
