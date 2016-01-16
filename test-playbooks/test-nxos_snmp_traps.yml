@@ -7,53 +7,114 @@
 
 
   tasks:
-  - name: ENSURE TRAP IS ENABLED FOR LLDP
-    nxos_snmp_traps: group=lldp state=enabled host={{ inventory_hostname }}
+  - name: ENSURE ALL TRAPS ARE ENABLED
+    nxos_snmp_traps: group=all state=enabled host={{ inventory_hostname }}
     register: data
 
   - name: TEST 1
     assert:
       that:
         - data.changed == true
-        - data.end_state[0]['enabled'] == 'Yes'
-        - data.existing[0]['enabled'] == 'No'
+        - data.end_state['aaa'][0]['enabled'] == 'Yes'
+        - data.end_state['bridge'][0]['enabled'] == 'Yes'
+        - data.end_state['callhome'][0]['enabled'] == 'Yes'
+        - data.end_state['cfs'][0]['enabled'] == 'Yes'
+        - data.end_state['config'][0]['enabled'] == 'Yes'
+        - data.end_state['entity'][0]['enabled'] == 'Yes'
+        - data.end_state['feature-control'][0]['enabled'] == 'Yes'
+        - data.end_state['hsrp'][0]['enabled'] == 'Yes'
+        - data.end_state['license'][0]['enabled'] == 'Yes'
+        - data.end_state['link'][0]['enabled'] == 'Yes'
+        - data.end_state['lldp'][0]['enabled'] == 'Yes'
+        - data.end_state['pim'][0]['enabled'] == 'Yes'
+        - data.end_state['rf'][0]['enabled'] == 'Yes'
+        - data.end_state['rmon'][0]['enabled'] == 'Yes'
+        - data.end_state['snmp'][0]['enabled'] == 'Yes'
+        - data.end_state['storm-control'][0]['enabled'] == 'Yes'
+        - data.end_state['stpx'][0]['enabled'] == 'Yes'
+        - data.end_state['sysmgr'][0]['enabled'] == 'Yes'
+        - data.end_state['system'][0]['enabled'] == 'Yes'
+        - data.end_state['upgrade'][0]['enabled'] == 'Yes'
+        - data.end_state['vtp'][0]['enabled'] == 'Yes'
 
-  - name: ENSURE TRAP IS DISABLED FOR LLDP
-    nxos_snmp_traps: group=lldp state=disabled host={{ inventory_hostname }}
+  - name: ENSURE ALL TRAPS ARE DISABLED
+    nxos_snmp_traps: group=all state=disabled host={{ inventory_hostname }}
     register: data
 
   - name: TEST 2
     assert:
       that:
         - data.changed == true
-        - data.end_state[0]['enabled'] == 'No'
-        - data.existing[0]['enabled'] == 'Yes'
+        - data.end_state['aaa'][0]['enabled'] == 'No'
+        - data.end_state['bridge'][0]['enabled'] == 'No'
+        - data.end_state['callhome'][0]['enabled'] == 'No'
+        - data.end_state['cfs'][0]['enabled'] == 'No'
+        - data.end_state['config'][0]['enabled'] == 'No'
+        - data.end_state['entity'][0]['enabled'] == 'No'
+        - data.end_state['feature-control'][0]['enabled'] == 'No'
+        - data.end_state['hsrp'][0]['enabled'] == 'No'
+        - data.end_state['license'][0]['enabled'] == 'No'
+        - data.end_state['link'][0]['enabled'] == 'No'
+        - data.end_state['lldp'][0]['enabled'] == 'No'
+        - data.end_state['pim'][0]['enabled'] == 'No'
+        - data.end_state['rf'][0]['enabled'] == 'No'
+        - data.end_state['rmon'][0]['enabled'] == 'No'
+        - data.end_state['snmp'][0]['enabled'] == 'No'
+        - data.end_state['storm-control'][0]['enabled'] == 'No'
+        - data.end_state['stpx'][0]['enabled'] == 'No'
+        - data.end_state['sysmgr'][0]['enabled'] == 'No'
+        - data.end_state['system'][0]['enabled'] == 'No'
+        - data.end_state['upgrade'][0]['enabled'] == 'No'
+        - data.end_state['vtp'][0]['enabled'] == 'No'
 
-  - name: TRYING TO RE-DISABLE TRAP
-    nxos_snmp_traps: group=lldp state=disabled host={{ inventory_hostname }}
+  - name: ENSURE TRAP IS ENABLED FOR LLDP
+    nxos_snmp_traps: group=lldp state=enabled host={{ inventory_hostname }}
     register: data
 
   - name: TEST 3
     assert:
       that:
-        - data.changed == false
-        - data.existing[0]['enabled'] == 'No'
+        - data.changed == true
+        - data.end_state['lldp'][0]['enabled'] == 'Yes'
+        - data.existing['lldp'][0]['enabled'] == 'No'
 
-  - name: ENSURE IT DOESN'T CHANGE DUE TO DISABLED FEATURE
-    nxos_snmp_traps: group=ospf state=enabled host={{ inventory_hostname }}
+  - name: ENSURE TRAP IS DISABLED FOR LLDP
+    nxos_snmp_traps: group=lldp state=disabled host={{ inventory_hostname }}
     register: data
 
   - name: TEST 4
     assert:
       that:
+        - data.changed == true
+        - data.end_state['lldp'][0]['enabled'] == 'No'
+        - data.existing['lldp'][0]['enabled'] == 'Yes'
+
+  - name: TRYING TO RE-DISABLE TRAP
+    nxos_snmp_traps: group=lldp state=disabled host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 5
+    assert:
+      that:
         - data.changed == false
+        - data.existing['lldp'][0]['enabled'] == 'No'
+
+  - name: ENSURE IT FAILS DUE TO DISABLED FEATURE
+    nxos_snmp_traps: group=ospf state=enabled host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 6
+    assert:
+      that:
+        - data | failed
 
   - name: ENSURE IT FAIL DUE TO UNSUPPORTED FEATURE
     nxos_snmp_traps: group=eigrp state=enabled host={{ inventory_hostname }}
     register: data
     ignore_errors: true
 
-  - name: TEST 5
+  - name: TEST 7
     assert:
       that:
         - data | failed
@@ -62,22 +123,20 @@
     nxos_snmp_traps: group=vtp state=enabled host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 6
+  - name: TEST 8
     assert:
       that:
         - data.changed == true
-        - data.end_state[0]['enabled'] == 'Yes'
-        - data.existing[0]['enabled'] == 'No'
+        - data.end_state['vtp'][0]['enabled'] == 'Yes'
+        - data.existing['vtp'][0]['enabled'] == 'No'
 
   - name: ENSURE TRAP IS DISABLED FOR VTP
     nxos_snmp_traps: group=vtp state=disabled host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 7
+  - name: TEST 9
     assert:
       that:
         - data.changed == true
-        - data.end_state[0]['enabled'] == 'No'
-        - data.existing[0]['enabled'] == 'Yes'
-
-
+        - data.end_state['vtp'][0]['enabled'] == 'No'
+        - data.existing['vtp'][0]['enabled'] == 'Yes'

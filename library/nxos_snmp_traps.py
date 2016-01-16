@@ -41,7 +41,7 @@ notes:
 options:
     group:
         description:
-            - location information
+            - Case sensitive group
         required: true
         default: null
         choices: ['aaa', 'bridge', 'callhome', 'cfs', 'config', 'entity',
@@ -110,13 +110,15 @@ proposed:
     sample: {"group": "lldp"}
 existing:
     description: k/v pairs of existing trap status
-    type: list
-    sample: [{"enabled": "No", "trap": "lldpRemTablesChange"}]
+    type: dict
+    sample: {"lldp": [{"enabled": "No",
+            "trap": "lldpRemTablesChange"}]}
 end_state:
     description: k/v pairs of trap info after module execution
     returned: always
-    type: dict or null
-    sample: [{"enabled": "Yes", "trap": "lldpRemTablesChange"}]
+    type: dict
+    sample: {"lldp": [{"enabled": "Yes",
+            "trap": "lldpRemTablesChange"}]}
 state:
     description: state as sent in from the playbook
     returned: always
@@ -201,16 +203,17 @@ def get_snmp_traps(device, group, module):
     try:
         resource_table = body['TABLE_snmp_trap']['ROW_snmp_trap']
 
-        for each in ['aaa', 'bridge', 'callhome', 'cfs', 'config', 'entity',
-                     'feature-control', 'hsrp', 'license', 'link', 'lldp',
-                     'ospf', 'pim', 'rf', 'rmon', 'snmp', 'storm-control',
-                     'stpx', 'sysmgr', 'system', 'upgrade', 'vtp']:
+        for each_feature in ['aaa', 'bridge', 'callhome', 'cfs', 'config',
+                             'entity', 'feature-control', 'hsrp', 'license',
+                             'link', 'lldp', 'ospf', 'pim', 'rf', 'rmon',
+                             'snmp', 'storm-control', 'stpx', 'sysmgr',
+                             'system', 'upgrade', 'vtp']:
 
-            resource[each] = []
+            resource[each_feature] = []
 
-        for each in resource_table:
-            key = str(each['trap_type'])
-            mapped_trap = apply_key_map(trap_key, each)
+        for each_resource in resource_table:
+            key = str(each_resource['trap_type'])
+            mapped_trap = apply_key_map(trap_key, each_resource)
 
             if key != 'Generic':
                 resource[key].append(mapped_trap)
@@ -223,9 +226,52 @@ def get_snmp_traps(device, group, module):
     if group == 'all'.lower():
         return resource
     elif find:
-        return find
+        trap_resource = {group: resource[group]}
+        return trap_resource
     else:
-        return []
+        # if 'find' is None, it means that 'group' is a
+        # currently disabled feature.
+        return {}
+
+
+def get_trap_commands(group, state, existing, module):
+    commands = []
+    enabled = False
+    disabled = False
+
+    if group == 'all':
+        if state == 'disabled':
+            for feature in existing:
+                trap_commands = ['no snmp-server enable traps {0}'.format(feature) for
+                                    trap in existing[feature] if trap['enabled'] == 'Yes']
+                trap_commands = list(set(trap_commands))
+                commands.append(trap_commands)
+
+        elif state == 'enabled':
+            for feature in existing:
+                trap_commands = ['snmp-server enable traps {0}'.format(feature) for
+                                    trap in existing[feature] if trap['enabled'] == 'No']
+                trap_commands = list(set(trap_commands))
+                commands.append(trap_commands)
+
+    else:
+        if group in existing:
+            for each_trap in existing[group]:
+                check = each_trap['enabled']
+                if check.lower() == 'yes':
+                    enabled = True
+                if check.lower() == 'no':
+                    disabled = True
+
+            if state == 'disabled' and enabled:
+                commands.append(['no snmp-server enable traps {0}'.format(group)])
+            elif state == 'enabled' and disabled:
+                commands.append(['snmp-server enable traps {0}'.format(group)])
+        else:
+            module.fail_json(msg='{0} is not a currently '
+                                 'enabled feature.'.format(group))
+
+    return commands
 
 
 def main():
@@ -257,34 +303,18 @@ def main():
     host = socket.gethostbyname(module.params['host'])
     port = module.params['port']
 
-    group = module.params['group']
+    group = module.params['group'].lower()
     state = module.params['state']
 
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol, port=port)
 
     existing = get_snmp_traps(device, group, module)
-    proposed = {}
-    proposed['group'] = group
-
-    enabled = False
-    disabled = False
-
-    for each in existing:
-        check = each['enabled']
-        if check.lower() == 'yes':
-            enabled = True
-        if check.lower() == 'no':
-            disabled = True
+    proposed = {'group': group}
 
     changed = False
     end_state = existing
-    commands = []
-
-    if state == 'disabled' and enabled:
-        commands.append(['no snmp-server enable traps {0}'.format(group)])
-    elif state == 'enabled' and disabled:
-        commands.append(['snmp-server enable traps {0}'.format(group)])
+    commands = get_trap_commands(group, state, existing, module)
 
     cmds = nested_command_list_to_string(commands)
     if cmds:
