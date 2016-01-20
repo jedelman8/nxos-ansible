@@ -1,0 +1,122 @@
+---
+
+- name: TESTING NXOS_VRF
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: ENSURE VRF IS CONFIGURED
+    nxos_vrf: vrf=ntc state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 1
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['admin_state'] == 'Up'
+        - data.end_state['vrf'] == 'ntc'
+        - data.end_state['description'] == ''
+
+  - name: ENSURE VRF IS CONFIGURED WITH PROPER DESCRIPTION
+    nxos_vrf: vrf=ntc state=present description='Testing description' host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 2
+    assert:
+      that:
+        - data.changed == true
+        - data.existing['admin_state'] == 'Up'
+        - data.existing['vrf'] == 'ntc'
+        - data.end_state['description'] == 'Testing description'
+
+  - name: ENSURE CONFIGURATION IS NOT CASE SENSITIVE
+    nxos_vrf: vrf=NTC state=present description='Testing description' host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 3
+    assert:
+      that:
+        - data.changed == false
+        - data.end_state['vrf'] == 'ntc'
+
+  - name: ENSURE IT FAILS DUE TO MISSING PARAM
+    nxos_vrf: state=present description='Testing description' host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 4
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE VRF IS NOT PRESENT
+    nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 5
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state == {}
+
+  - name: ENSURE VRF IS CONFIGURED WITH UP STATE
+    nxos_vrf: vrf=ntc state=present admin_state=up host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 6
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['admin_state'] == 'Up'
+        - data.end_state['vrf'] == 'ntc'
+        - data.end_state['description'] == ''
+        - data.existing == {}
+        - data.proposed['admin_state'] == 'up'
+        - data.proposed['vrf'] == 'ntc'
+
+  - name: ENSURE VRF IS CONFIGURED WITH DOWN STATE
+    nxos_vrf: vrf=ntc state=present admin_state=down host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 7
+    assert:
+      that:
+        - data.changed == true
+        - data.existing['admin_state'] == 'Up'
+        - data.existing['vrf'] == 'ntc'
+        - data.existing['description'] == ''
+        - data.end_state['admin_state'] == 'Down'
+        - data.end_state['vrf'] == 'ntc'
+
+  - name: ENSURE VRF IS NOT PRESENT
+    nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 8
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state == {}
+
+  - name: ENSURE VRF IS NOT PRESENT, AGAIN
+    nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 9
+    assert:
+      that:
+        - data.changed == false
+        - data.existing == {}
+        - data.end_state == {}
+
+  - name: ENSURE IT FAILS DUE TO VRF==DEFAULT
+    nxos_vrf: vrf=default state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 10
+    assert:
+      that:
+        - data | failed
