@@ -41,12 +41,24 @@
         - data.changed == false
         - data.end_state['vrf'] == 'ntc'
 
+  - name: ENSURE VRF DESCRIPTION IS CHANGED
+    nxos_vrf: vrf=ntc state=present description='Testing a new description' host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 4
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['admin_state'] == 'Up'
+        - data.end_state['vrf'] == 'ntc'
+        - data.end_state['description'] == 'Testing a new description'
+
   - name: ENSURE IT FAILS DUE TO MISSING PARAM
     nxos_vrf: state=present description='Testing description' host={{ inventory_hostname }}
     register: data
     ignore_errors: true
 
-  - name: TEST 4
+  - name: TEST 5
     assert:
       that:
         - data | failed
@@ -55,7 +67,7 @@
     nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 5
+  - name: TEST 6
     assert:
       that:
         - data.changed == true
@@ -65,7 +77,7 @@
     nxos_vrf: vrf=ntc state=present admin_state=up host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 6
+  - name: TEST 7
     assert:
       that:
         - data.changed == true
@@ -80,7 +92,7 @@
     nxos_vrf: vrf=ntc state=present admin_state=down host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 7
+  - name: TEST 8
     assert:
       that:
         - data.changed == true
@@ -94,7 +106,7 @@
     nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 8
+  - name: TEST 9
     assert:
       that:
         - data.changed == true
@@ -104,7 +116,7 @@
     nxos_vrf: vrf=ntc state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: TEST 9
+  - name: TEST 10
     assert:
       that:
         - data.changed == false
@@ -116,7 +128,7 @@
     register: data
     ignore_errors: true
 
-  - name: TEST 10
+  - name: TEST 11
     assert:
       that:
         - data | failed
