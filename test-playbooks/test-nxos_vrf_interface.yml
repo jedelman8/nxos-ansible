@@ -1,0 +1,117 @@
+---
+
+- name: TESTING NXOS_VRF_INTERFACE
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: PREPARE THE DEVICE
+    nxos_command: command='vrf context ntc ; no shutdown ; exit ; interface loopback16 ;' type=config host={{ inventory_hostname }}
+
+  - name: ENSURE VRF IS CONFIGURED
+    nxos_vrf_interface: vrf=ntc interface=loopback16 state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 1
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['interface'] == 'loopback16'
+        - data.end_state['vrf'] == 'ntc'
+
+  - name: TRY TO RECONFIGURE VRF. CHECK IDEMPOTENCY
+    nxos_vrf_interface: vrf=ntc interface=loopback16 state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 2
+    assert:
+      that:
+        - data.changed == false
+        - data.existing['interface'] == 'loopback16'
+        - data.existing['vrf'] == 'ntc'
+
+  - name: ENSURE IT FAILS DUE TO UNSUPPORTED VRF
+    nxos_vrf_interface: vrf=wrong_ntc interface=loopback16 state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 3
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS BECAUSE INTERFACE DOES NOT EXIST
+    nxos_vrf_interface: vrf=ntc interface=loopback17 state=present host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 4
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS BECAUSE TRYING TO REMOVE WRONG VRF
+    nxos_vrf_interface: vrf=test interface=loopback16 state=absent host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 5
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE VRF IS NOT CONFIGURED
+    nxos_vrf_interface: vrf=ntc interface=loopback16 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 6
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['interface'] == 'loopback16'
+        - data.end_state['vrf'] == ''
+
+  - name: TRY TO REDELETE VRF. CHECK IDEMPOTENCY
+    nxos_vrf_interface: vrf=ntc interface=loopback16 state=absent host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 7
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO LAYER2 PORT
+    nxos_vrf_interface: vrf=ntc interface=port-channel100 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 8
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO MISSING INTERFACE PARAM
+    nxos_vrf_interface: vrf=ntc host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 9
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO MISSING VRF PARAM
+    nxos_vrf_interface: interface=port-channel100 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 10
+    assert:
+      that:
+        - data | failed
+
+  - name: PREPARE THE DEVICE
+    nxos_command: command='no vrf context ntc ;' type=config host={{ inventory_hostname }}
