@@ -292,18 +292,17 @@ def main():
                              " first.")
 
     intf_type = get_interface_type(interface)
-    if intf_type in ['ethernet', 'portchannel']:
-        mode = get_interface_mode(device, interface, intf_type, module)
-        if mode == 'layer2':
-            module.fail_json(msg='Ensure interface is a Layer 3 port before '
-                                 'configuring a VRF on an interface. You can '
-                                 'use nxos_interface')
-
     if (intf_type != 'ethernet' and
             is_default(device, interface, module) == 'DNE'):
         module.fail_json(msg="interface does not exist on switch. Verify "
                              "switch platform or create it first with "
                              "nxos_interface if it's a logical interface")
+
+    mode = get_interface_mode(device, interface, intf_type, module)
+    if mode == 'layer2':
+        module.fail_json(msg='Ensure interface is a Layer 3 port before '
+                             'configuring a VRF on an interface. You can '
+                             'use nxos_interface')
 
     proposed = dict(interface=interface, vrf=vrf)
 
