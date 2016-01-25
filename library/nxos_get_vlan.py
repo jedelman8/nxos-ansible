@@ -84,7 +84,7 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-vlan_data:
+resource:
     description:
         - Show multiple information about vlans.
     returned: always
@@ -215,7 +215,7 @@ def main():
     elif vlan_id != 'all':
         vlan_data = vlan_data[0]
 
-    module.exit_json(vlan_data=vlan_data)
+    module.exit_json(resource=vlan_data)
 
 
 from ansible.module_utils.basic import *

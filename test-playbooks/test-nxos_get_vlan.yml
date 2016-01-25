@@ -23,11 +23,11 @@
   - name: TEST 2
     assert:
       that: 
-        - data.vlan_data.vlan_id == '10'
-        - data.vlan_data.admin_state
-        - data.vlan_data.interfaces
-        - data.vlan_data.name
-        - data.vlan_data.state
+        - data.resource.vlan_id == '10'
+        - data.resource.admin_state
+        - data.resource.interfaces
+        - data.resource.name
+        - data.resource.state
 
   - name: PREPARING THE DEVICE
     nxos_command: command="vlan 205 ;" host={{ inventory_hostname }} type=config
@@ -40,7 +40,7 @@
   - name: TEST 3
     assert:
       that: 
-        - data.vlan_data.vlan_id == '205'
+        - data.resource.vlan_id == '205'
 
   - name: RETRIEVE DATA FOR A NOT EXISTING VLAN
     nxos_get_vlan:  vlan_id=25 host={{ inventory_hostname }}
@@ -49,7 +49,7 @@
   - name: TEST 4
     assert:
       that: 
-        - data.vlan_data == {}
+        - data.resource == {}
 
   - name: CLEANING UP CONFIGURATION
     nxos_command:
