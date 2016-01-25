@@ -33,14 +33,6 @@ notes:
       the username and password params for every tasks.
     - Using the username and password params will override the .netauth file
 options:
-    detail:
-        description:
-            - if set to true, returns detailed statistics for interfaces
-              equivalent to 'show interface status'
-        required: false
-        default: false
-        choices: ['true','false']
-        aliases: []
     host:
         description:
             - IP Address or hostname (resolvable by Ansible control host)
@@ -82,10 +74,6 @@ options:
 EXAMPLES = '''
 # retrieve facts
 - nxos_get_facts: host={{ inventory_hostname }}
-
-# retrieve facts with detailed info for interfaces (from 'show interface status')
-- nxos_get_facts: host={{ inventory_hostname }} detail=true
-
 '''
 
 RETURN = '''
@@ -119,15 +107,21 @@ except ImportError as ie:
     HAS_PYCSCO = False
 
 
-def parsed_data_from_device(device, command, module):
+def parsed_data_from_device(device, command, module, fmat=None):
     try:
-        data = device.show(command)
+        if fmat is not None:
+            data = device.show(command, fmat=fmat)
+        else:
+            data = device.show(command)
     except CLIError as clie:
         module.fail_json(msg='Error sending {0}'.format(command),
                          error=str(clie))
-
-    data_dict = xmltodict.parse(data[1])
-    body = data_dict['ins_api']['outputs']['output']['body']
+    if fmat is not None:
+        data_dict = json.loads(data[1])
+        body = data_dict['ins_api']['outputs']['output']['body']
+    else:
+        data_dict = xmltodict.parse(data[1])
+        body = data_dict['ins_api']['outputs']['output']['body']
     return body
 
 
@@ -136,7 +130,11 @@ def apply_key_map(key_map, table):
     for key, value in table.items():
         new_key = key_map.get(key)
         if new_key:
-            new_dict[new_key] = str(value)
+            value = table.get(key)
+            if value:
+                new_dict[new_key] = str(value)
+            else:
+                new_dict[new_key] = value
     return new_dict
 
 
@@ -153,35 +151,18 @@ def get_show_version_facts(body):
     return mapped_show_version_facts
 
 
-def get_interface_facts(body, detail):
-    detailed_list = []
+def get_interface_facts(body):
     interface_list = []
-    detailed_table = body['TABLE_interface']['ROW_interface']
+    interface_table = body['TABLE_interface']['ROW_interface']
 
-    key_map = {
-                "description": "description",
-                "state": "state",
-                "chassis_id": "platform",
-                "vlan": "vlan",
-                "duplex": "duplex",
-                "speed": "speed",
-                "type": "type"
-            }
+    if isinstance(interface_table, dict):
+        interface_table = [interface_table]
 
-    if isinstance(detailed_table, dict):
-        detailed_table = [detailed_table]
-
-    for each in detailed_table:
+    for each in interface_table:
         interface = str(each.get('interface', None))
         if interface:
-            temp = {}
-            temp['interface'] = interface
             interface_list.append(interface)
-            if detail:
-                mapped_detailed_facts = apply_key_map(key_map, each)
-                mapped_detailed_facts.update(temp)
-                detailed_list.append(mapped_detailed_facts)
-    return (detailed_list, interface_list)
+    return interface_list
 
 
 def get_show_module_facts(body):
@@ -248,36 +229,23 @@ def get_fan_facts(body):
 
 
 def get_vlan_facts(body):
-    vlan_facts = []
+    vlan_list = []
     vlan_table = body['TABLE_vlanbriefxbrief']['ROW_vlanbriefxbrief']
-
-    key_map = {
-                "vlanshowbr-vlanid-utf": "vlan_id",
-                "vlanshowbr-vlanname": "name",
-                "vlanshowbr-shutstate": "admin_state",
-                "vlanshowbr-vlanstate": "state",
-                "vlanshowplist-ifidx": "interfaces"
-            }
 
     if isinstance(vlan_table, dict):
         vlan_table = [vlan_table]
 
     for each in vlan_table:
-        mapped_vlan_facts = apply_key_map(key_map, each)
-        try:
-            if mapped_vlan_facts['interfaces']:
-                mapped_vlan_facts['interfaces'] = mapped_vlan_facts['interfaces'].split(',')
-        except KeyError:
-            mapped_vlan_facts['interfaces'] = []
-        vlan_facts.append(mapped_vlan_facts)
-    return vlan_facts
+        vlan = str(each.get('vlanshowbr-vlanid-utf', None))
+        if vlan:
+            vlan_list.append(vlan)
+    return vlan_list
 
 
 def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            detail=dict(choices=BOOLEANS, type='bool'),
             protocol=dict(choices=['http', 'https'], default='http'),
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
@@ -296,8 +264,6 @@ def main():
     port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
-    detail = module.params['detail']
-
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol, port=port)
 
@@ -308,12 +274,14 @@ def main():
     show_vlan_command = 'show vlan brief'
 
     # Get 'show version' facts.
-    show_version_body = parsed_data_from_device(device, show_version_command, module)
+    show_version_body = parsed_data_from_device(device,
+                                                show_version_command, module)
     show_version = get_show_version_facts(show_version_body)
 
     # Get interfaces facts.
-    interface_body = parsed_data_from_device(device, interface_command, module)
-    detailed_list, interface_list = get_interface_facts(interface_body, detail)
+    interface_body = parsed_data_from_device(device, interface_command,
+                                             module, fmat='json')
+    interfaces_list = get_interface_facts(interface_body)
 
     # Get module facts.
     show_module_body = parsed_data_from_device(
@@ -331,17 +299,16 @@ def main():
     vlan = get_vlan_facts(show_vlan_body)
 
     facts = dict(
-        interfaces=interface_list,
+        interfaces_list=interfaces_list,
         module=show_module,
         power_supply_info=powersupply,
         fan_info=fan,
         vlan_list=vlan)
 
     facts.update(show_version)
-    if detail:
-        facts['detailed_interface'] = detailed_list
 
     module.exit_json(ansible_facts=facts)
+
 
 from ansible.module_utils.basic import *
 if __name__ == '__main__':
