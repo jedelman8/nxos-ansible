@@ -7,7 +7,7 @@
 
 
   tasks:
-  - name: RETRIEVE FACTS FOR ALL VLANS
+  - name: RETRIEVE DATA FOR ALL VLANS
     nxos_get_vlan:  vlan_id=all host={{ inventory_hostname }}
     register: data
 
@@ -16,31 +16,40 @@
       that: 
         - data | success
 
-  - name: RETRIEVE FACTS FOR A SPECIFIC VLAN
+  - name: RETRIEVE DATA FOR A SPECIFIC VLAN
     nxos_get_vlan:  vlan_id=10 host={{ inventory_hostname }}
     register: data
 
   - name: TEST 2
     assert:
       that: 
-        - data.vlan_facts.vlan_id == '10'
-        - data.vlan_facts.admin_state
-        - data.vlan_facts.interfaces
-        - data.vlan_facts.name
-        - data.vlan_facts.state
+        - data.vlan_data.vlan_id == '10'
+        - data.vlan_data.admin_state
+        - data.vlan_data.interfaces
+        - data.vlan_data.name
+        - data.vlan_data.state
 
   - name: PREPARING THE DEVICE
     nxos_command: command="vlan 205 ;" host={{ inventory_hostname }} type=config
     register: data
 
-  - name: RETRIEVE FACTS FOR A SPECIFIC VLAN
+  - name: RETRIEVE DATA FOR A SPECIFIC VLAN
     nxos_get_vlan:  vlan_id=205 host={{ inventory_hostname }}
     register: data
 
   - name: TEST 3
     assert:
       that: 
-        - data.vlan_facts.vlan_id == '205'
+        - data.vlan_data.vlan_id == '205'
+
+  - name: RETRIEVE DATA FOR A NOT EXISTING VLAN
+    nxos_get_vlan:  vlan_id=25 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 4
+    assert:
+      that: 
+        - data.vlan_data == {}
 
   - name: CLEANING UP CONFIGURATION
     nxos_command:

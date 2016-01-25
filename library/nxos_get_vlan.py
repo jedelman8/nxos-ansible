@@ -17,9 +17,9 @@
 DOCUMENTATION = '''
 ---
 module: nxos_get_vlan
-short_description: Gets VLAN facts about Nexus NX-API enabled switch
+short_description: Gets VLAN data about Nexus NX-API enabled switch
 description:
-    - Offers ability to extract facts from device
+    - Offers ability to extract data from device
 author: Jason Edelman (@jedelman8)
 requirements:
     - NX-API 1.0
@@ -77,14 +77,14 @@ options:
 '''
 
 EXAMPLES = '''
-# retrieve all vlan facts
+# retrieve all vlan data
 - nxos_get_vlan: host={{ inventory_hostname }}
-# retrieve facts of a specific vlan
+# retrieve data of a specific vlan
 - nxos_get_vlan:  vlan_id=10 host={{ inventory_hostname }}
 '''
 
 RETURN = '''
-vlan_facts:
+vlan_data:
     description:
         - Show multiple information about vlans.
     returned: always
@@ -112,8 +112,11 @@ def parsed_data_from_device(device, command, module):
     try:
         data = device.show(command)
     except CLIError as clie:
-        module.fail_json(msg='Error sending {0}'.format(command),
-                         error=str(clie))
+        if 'show vlan id' in command:
+            return {}
+        else:
+            module.fail_json(msg='Error sending {0}'.format(command),
+                             error=str(clie))
 
     data_dict = xmltodict.parse(data[1])
     body = data_dict['ins_api']['outputs']['output']['body']
@@ -133,9 +136,10 @@ def apply_key_map(key_map, table):
     return new_dict
 
 
-def get_vlan_facts(body):
-    vlan_facts = []
-    vlan_table = body['TABLE_vlanbriefxbrief']['ROW_vlanbriefxbrief']
+def get_vlan_data(device, vlan_id, module):
+    show_vlan_command = 'show vlan brief'
+    show_vlan_id_command = 'show vlan id {0}'.format(vlan_id)
+    vlan_data = []
 
     key_map = {
                 "vlanshowbr-vlanid-utf": "vlan_id",
@@ -145,18 +149,28 @@ def get_vlan_facts(body):
                 "vlanshowplist-ifidx": "interfaces"
             }
 
+    if vlan_id == 'all':
+        body = parsed_data_from_device(device, show_vlan_command, module)
+        vlan_table = body['TABLE_vlanbriefxbrief']['ROW_vlanbriefxbrief']
+    else:
+        body = parsed_data_from_device(device, show_vlan_id_command, module)
+        if body:
+            vlan_table = body['TABLE_vlanbriefid']['ROW_vlanbriefid']
+        else:
+            return []
+
     if isinstance(vlan_table, dict):
         vlan_table = [vlan_table]
 
     for each in vlan_table:
-        mapped_vlan_facts = apply_key_map(key_map, each)
+        mapped_vlan_data = apply_key_map(key_map, each)
         try:
-            if mapped_vlan_facts['interfaces']:
-                mapped_vlan_facts['interfaces'] = mapped_vlan_facts['interfaces'].split(',')
+            if mapped_vlan_data['interfaces']:
+                mapped_vlan_data['interfaces'] = mapped_vlan_data['interfaces'].split(',')
         except KeyError:
-            mapped_vlan_facts['interfaces'] = []
-        vlan_facts.append(mapped_vlan_facts)
-    return vlan_facts
+            mapped_vlan_data['interfaces'] = []
+        vlan_data.append(mapped_vlan_data)
+    return vlan_data
 
 
 def main():
@@ -194,21 +208,14 @@ def main():
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol, port=port)
 
-    show_vlan_command = 'show vlan brief'
+    vlan_data = get_vlan_data(device, vlan_id, module)
 
-    show_vlan_body = parsed_data_from_device(device, show_vlan_command, module)
-    vlan_facts = get_vlan_facts(show_vlan_body)
+    if not vlan_data:
+        vlan_data = {}
+    elif vlan_id != 'all':
+        vlan_data = vlan_data[0]
 
-    if isinstance(vlan_id, int):
-        present = False
-        for each in vlan_facts:
-            if int(each['vlan_id']) == vlan_id:
-                present = True
-                vlan_facts = each
-        if not present:
-            vlan_facts = {}
-
-    module.exit_json(vlan_facts=vlan_facts)
+    module.exit_json(vlan_data=vlan_data)
 
 
 from ansible.module_utils.basic import *
