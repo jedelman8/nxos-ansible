@@ -1,0 +1,59 @@
+---
+
+- name: NXOS_GET_VLAN TESTING
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: RETRIEVE DATA FOR ALL VLANS
+    nxos_get_vlan:  vlan_id=all host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 1
+    assert:
+      that: 
+        - data | success
+
+  - name: RETRIEVE DATA FOR A SPECIFIC VLAN
+    nxos_get_vlan:  vlan_id=10 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 2
+    assert:
+      that: 
+        - data.resource.vlan_id == '10'
+        - data.resource.admin_state
+        - data.resource.interfaces
+        - data.resource.name
+        - data.resource.state
+
+  - name: PREPARING THE DEVICE
+    nxos_command: command="vlan 205 ;" host={{ inventory_hostname }} type=config
+    register: data
+
+  - name: RETRIEVE DATA FOR A SPECIFIC VLAN
+    nxos_get_vlan:  vlan_id=205 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 3
+    assert:
+      that: 
+        - data.resource.vlan_id == '205'
+
+  - name: RETRIEVE DATA FOR A NOT EXISTING VLAN
+    nxos_get_vlan:  vlan_id=25 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 4
+    assert:
+      that: 
+        - data.resource == {}
+
+  - name: CLEANING UP CONFIGURATION
+    nxos_command:
+      host: "{{ inventory_hostname }}"
+      type: config
+      command_list: 
+        - 'no vlan 205'
