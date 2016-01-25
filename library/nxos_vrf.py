@@ -272,7 +272,7 @@ def main():
     port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
-    vrf = module.params['vrf'].lower()
+    vrf = module.params['vrf']
     admin_state = module.params['admin_state'].lower()
     description = module.params['description']
     state = module.params['state']
