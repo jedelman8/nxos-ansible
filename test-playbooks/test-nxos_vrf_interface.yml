@@ -21,6 +21,17 @@
         - data.end_state['interface'] == 'loopback16'
         - data.end_state['vrf'] == 'ntc'
 
+  - name: ENSURE VRF IS CONFIGURED
+    nxos_vrf_interface: vrf=NTC interface=loopback16 state=present host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 1
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['interface'] == 'loopback16'
+        - data.end_state['vrf'] == 'ntc'
+
   - name: TRY TO RECONFIGURE VRF. CHECK IDEMPOTENCY
     nxos_vrf_interface: vrf=ntc interface=loopback16 state=present host={{ inventory_hostname }}
     register: data
@@ -73,7 +84,7 @@
         - data.end_state['interface'] == 'loopback16'
         - data.end_state['vrf'] == ''
 
-  - name: TRY TO REDELETE VRF. CHECK IDEMPOTENCY
+  - name: TRY TO REDELETE VRF
     nxos_vrf_interface: vrf=ntc interface=loopback16 state=absent host={{ inventory_hostname }}
     register: data
     ignore_errors: true

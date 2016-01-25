@@ -233,7 +233,7 @@ def get_vrf_list(device, module):
         vrf_table = body['TABLE_vrf']['ROW_vrf']
         if vrf_table:
             for each in vrf_table:
-                vrf_list.append(str(each['vrf_name'].lower()))
+                vrf_list.append(str(each['vrf_name']))
     except (KeyError, AttributeError):
         return vrf_list
 
@@ -278,7 +278,7 @@ def main():
     host = socket.gethostbyname(module.params['host'])
     port = module.params['port']
 
-    vrf = module.params['vrf'].lower()
+    vrf = module.params['vrf']
     interface = module.params['interface'].lower()
     state = module.params['state']
 
