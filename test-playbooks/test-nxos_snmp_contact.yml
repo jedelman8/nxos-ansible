@@ -7,22 +7,22 @@
 
 
   tasks:
-  - name: "ENSURE SNMP CONTACT IS CONFIGURED"
+  - name: ENSURE SNMP CONTACT IS CONFIGURED
     nxos_snmp_contact: contact=Test state=present host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 1"
+  - name: TEST 1
     assert:
       that:
         - data | changed
         - data.proposed['contact'] == 'Test'
         - data.end_state['contact'] == 'Test'
 
-  - name: "OVERWRIGHT SNMP CONTACT INFORMATION"
+  - name: OVERWRIGHT SNMP CONTACT INFORMATION
     nxos_snmp_contact: contact=New_Test host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 2"
+  - name: TEST 2
     assert:
       that:
         - data | changed
@@ -30,31 +30,31 @@
         - data.proposed['contact'] == 'New_Test'
         - data.end_state['contact'] == 'New_Test'
 
-  - name: "ENSURE SNMP CONTACT IS REMOVED (NOT PRESENT)"
+  - name: ENSURE SNMP CONTACT IS REMOVED (NOT PRESENT)
     nxos_snmp_contact: contact=Test state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 3"
+  - name: TEST 3
     assert:
       that:
         - data.changed == false
 
-  - name: "ENSURE SNMP CONTACT IS REMOVED"
+  - name: ENSURE SNMP CONTACT IS REMOVED
     nxos_snmp_contact: contact=New_Test state=absent host={{ inventory_hostname }}
     register: data
 
-  - name: "TEST 4"
+  - name: TEST 4
     assert:
       that:
         - data | changed
         - data.end_state == {}
 
-  - name: "ENSURE FAILS DUE TO MISSING REQUIRED PARAM"
+  - name: ENSURE FAILS DUE TO MISSING REQUIRED PARAM
     nxos_snmp_contact: state=present host={{ inventory_hostname }}
     register: data
     ignore_errors: true
 
-  - name: "TEST 5"
+  - name: TEST 5
     assert:
       that:
         - data | failed

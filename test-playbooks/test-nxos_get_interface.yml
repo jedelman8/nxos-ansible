@@ -7,7 +7,7 @@
 
 
   tasks:
-  - name: "SHOW INTERFACE DETAILS"
+  - name: SHOW INTERFACE DETAILS
     nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }} detail=true
     register: data
 
@@ -16,7 +16,7 @@
       that:
         - data['resource']['interface'] == 'Ethernet2/1'
 
-  - name: "SHOW INTERFACE INFO"
+  - name: SHOW INTERFACE INFO
     nxos_get_interface: interface=Ethernet2/1 host={{ inventory_hostname }}
     register: data
 
