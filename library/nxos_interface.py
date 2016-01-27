@@ -659,11 +659,15 @@ def get_proposed(existing, normalized_interface, args):
 
 
 def get_existing(device, normalized_interface, module):
+
     intf_type = get_interface_type(normalized_interface)
-    interface_dict = get_interfaces_dict(device)
 
-    all_interfaces_of_given_type = interface_dict[intf_type]
+    # commenting out now due to bug on 7K
+    # interface_dict = get_interfaces_dict(device)
 
+    # all_interfaces_of_given_type = interface_dict[intf_type]
+
+    """
     if intf_type == 'ethernet':
         if normalized_interface not in all_interfaces_of_given_type:
             module.fail_json(msg='interface does not exist on device',
@@ -676,6 +680,8 @@ def get_existing(device, normalized_interface, module):
             existing = {}
         else:
             existing = get_interface(device, normalized_interface, module)
+    """
+    existing = get_interface(device, normalized_interface, module)
 
     return existing
 
