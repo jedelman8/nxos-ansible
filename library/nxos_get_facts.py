@@ -83,8 +83,6 @@ EXAMPLES = '''
 # retrieve facts
 - nxos_get_facts: host={{ inventory_hostname }}
 
-# retrieve facts with detailed info for interfaces (from 'show interface status')
-- nxos_get_facts: host={{ inventory_hostname }} detail=true
 
 '''
 
@@ -277,7 +275,6 @@ def main():
 
     module = AnsibleModule(
         argument_spec=dict(
-            detail=dict(choices=BOOLEANS, type='bool'),
             protocol=dict(choices=['http', 'https'], default='http'),
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
@@ -312,8 +309,13 @@ def main():
     show_version = get_show_version_facts(show_version_body)
 
     # Get interfaces facts.
-    interface_body = parsed_data_from_device(device, interface_command, module)
-    detailed_list, interface_list = get_interface_facts(interface_body, detail)
+
+    try:
+        interface_body = parsed_data_from_device(device, interface_command, module)
+        detailed_list, interface_list = get_interface_facts(interface_body, detail)
+    except:
+        # 7K hack for now
+        interface_list = []
 
     # Get module facts.
     show_module_body = parsed_data_from_device(
@@ -338,8 +340,6 @@ def main():
         vlan_list=vlan)
 
     facts.update(show_version)
-    if detail:
-        facts['detailed_interface'] = detailed_list
 
     module.exit_json(ansible_facts=facts)
 
