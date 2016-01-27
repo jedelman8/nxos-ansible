@@ -293,8 +293,6 @@ def main():
     port = module.params['port']
     host = socket.gethostbyname(module.params['host'])
 
-    detail = module.params['detail']
-
     device = Device(ip=host, username=username, password=password,
                     protocol=protocol, port=port)
 
