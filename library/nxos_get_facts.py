@@ -309,9 +309,12 @@ def main():
     # Get interfaces facts.
 
     try:
-        interface_body = parsed_data_from_device(device, interface_command, module)
-        detailed_list, interface_list = get_interface_facts(interface_body, detail)
-    except:
+        data = device.show(interface_command)
+        data_dict = xmltodict.parse(data[1])
+        interface_body = data_dict['ins_api']['outputs']['output']['body']
+        detailed_list, interface_list = get_interface_facts(interface_body,
+                                                            detail)
+    except CLIError:
         # 7K hack for now
         interface_list = []
 
