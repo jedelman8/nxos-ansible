@@ -1,0 +1,207 @@
+---
+
+- name: TESTING NXOS_MTU
+  hosts: n9k2
+  connection: local
+  gather_facts: no
+
+
+  tasks:
+  - name: ENSURE VLAN10 MTU IS SET TO 1700
+    nxos_mtu: interface=vlan10 mtu=1700 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 1
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['mtu'] == '1700'
+
+  - name: ATTEMPT TO RECONFIGURE VLAN10 MTU TO 1700
+    nxos_mtu: interface=vlan10 mtu=1700 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 2
+    assert:
+      that:
+        - data.changed == false
+        - data.existing['mtu'] == '1700'
+
+  - name: ENSURE IT FAILS DUE TO TOO MANY PARAMS
+    nxos_mtu: interface=vlan10 mtu=1500 sysmtu=1500 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 3
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO MISSING INTERFACE PARAM
+    nxos_mtu: mtu=1500 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 4
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO MISSING MTU PARAM
+    nxos_mtu: interface=vlan10 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 5
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO NOT EXISTING INTERFACE
+    nxos_mtu: interface=vlan15 mtu=1500 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 6
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO LOOPBACK INTERFACE
+    nxos_mtu: interface=loopback10 mtu=1500 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 7
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO INVALID MTU FOR L2 INTERFACE
+    nxos_mtu: interface=port-channel100 mtu=2000 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 8
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO VERY LITTLE MTU 
+    nxos_mtu: interface=vlan10 mtu=570 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 9
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO TOO LARGE MTU 
+    nxos_mtu: interface=vlan10 mtu=9230 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 10
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO VERY LITTLE SYSTEM MTU 
+    nxos_mtu: sysmtu=570 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 11
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO TOO LARGE SYSTEM MTU 
+    nxos_mtu: sysmtu=9230 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 12
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE IT FAILS DUE TO ODD SYSMTU VALUE
+    nxos_mtu: sysmtu=1501 host={{ inventory_hostname }}
+    register: data
+    ignore_errors: true
+
+  - name: TEST 13
+    assert:
+      that:
+        - data | failed
+
+  - name: ENSURE VLAN10 MTU IS REMOVED 
+    nxos_mtu: interface=vlan10 mtu=1700 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 14
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['mtu'] == '1500'
+
+  - name: ATTEMPT TO REMOVE VLAN10 MTU AGAIN 
+    nxos_mtu: interface=vlan10 mtu=1700 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 15
+    assert:
+      that:
+        - data.changed == false
+
+  - name: ENSURE VLAN10 MTU IS SET TO 1600
+    nxos_mtu: interface=vlan10 mtu=1600 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 16
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['mtu'] == '1600'
+
+  - name: ENSURE SYSMTU IS SET TO 1700
+    nxos_mtu: sysmtu=1700 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 17
+    assert:
+      that:
+        - data.changed == true
+        - data.end_state['sysmtu'] == '1700'
+
+  - name: ATTEMPT TO CONFIGURE THE SAME SYSMTU AGAIN 
+    nxos_mtu: sysmtu=1700 host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 18
+    assert:
+      that:
+        - data.changed == false
+        - data.existing['sysmtu'] == '1700'
+
+  - name: ATTEMPT TO REMOVE WRONG SYSMTU VALUE
+    nxos_mtu: sysmtu=1600 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 19
+    assert:
+      that:
+        - data.changed == false
+        - data.existing['sysmtu'] == '1700'
+
+  - name: REMOVE SYSMTU 
+    nxos_mtu: sysmtu=1700 state=absent host={{ inventory_hostname }}
+    register: data
+
+  - name: TEST 20
+    assert:
+      that:
+        - data.changed == true
+        - data.existing['sysmtu'] == '1700'
