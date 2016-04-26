@@ -151,7 +151,7 @@ def main():
                        default='present'),
             host=dict(required=True),
             username=dict(),
-            password=dict(),
+            password=dict(no_log=True),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),

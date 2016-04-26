@@ -194,7 +194,7 @@ def main():
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str'),
+            password=dict(no_log=True, type='str'),
         ),
         supports_check_mode=False
     )

@@ -143,7 +143,7 @@ def main():
             commit_changes=dict(choices=BOOLEANS),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str'),
+            password=dict(no_log=True, type='str'),
             protocol=dict(default='http', choices=['http', 'https'])
         ),
         required_one_of=[['source_config', 'current_cfg_file']],

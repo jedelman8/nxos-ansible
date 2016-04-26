@@ -145,7 +145,7 @@ def main():
             oif_source=dict(),
             host=dict(required=True),
             username=dict(),
-            password=dict(),
+            password=dict(no_log=True),
             state=dict(choices=['present', 'absent', 'default'],
                        default='present'),
             protocol=dict(choices=['http', 'https'],
