@@ -125,12 +125,12 @@ def main():
         argument_spec=dict(
             domain=dict(type='str'),
             version=dict(type='str'),
-            vtp_password=dict(type='str'),
+            vtp_password=dict(no_log=True, type='str'),
             state=dict(choices=['absent', 'present'],
                        default='present'),
             host=dict(required=True),
             username=dict(),
-            password=dict(),
+            password=dict(no_log=True),
             protocol=dict(choices=['http', 'https'],
                           default='http')
         ),

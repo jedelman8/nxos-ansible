@@ -235,7 +235,7 @@ def main():
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str')
+            password=dict(no_log=True, type='str')
         ),
         required_one_of=[['command', 'command_list']],
         mutually_exclusive=[['command', 'command_list']],

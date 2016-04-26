@@ -108,7 +108,7 @@ def main():
             dest_file=dict(),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str'),
+            password=dict(no_log=True, type='str'),
             protocol=dict(default='http', choices=['http', 'https'])
         ),
         supports_check_mode=False

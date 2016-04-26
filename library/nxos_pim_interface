@@ -219,7 +219,7 @@ def main():
             neighbor_type=dict(choices=['prefix', 'routemap']),
             host=dict(required=True),
             username=dict(),
-            password=dict(),
+            password=dict(no_log=True),
             state=dict(choices=['present', 'absent', 'default'],
                        default='present'),
             protocol=dict(choices=['http', 'https'],

@@ -130,7 +130,7 @@ def main():
             protocol=dict(choices=['http', 'https'], default='http'),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str'),
+            password=dict(no_log=True, type='str'),
         ),
         supports_check_mode=True
     )

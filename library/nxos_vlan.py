@@ -409,7 +409,7 @@ def main():
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(type='str'),
-            password=dict(type='str'),
+            password=dict(no_log=True, type='str'),
         ),
         mutually_exclusive=[['vlan_range', 'name'],
                             ['vlan_id', 'vlan_range']],

@@ -551,7 +551,7 @@ def main():
             port=dict(required=False, type='int', default=None),
             host=dict(required=True),
             username=dict(required=False),
-            password=dict(required=False),
+            password=dict(no_log=True, required=False),
         ),
         mutually_exclusive=[['access_vlan', 'trunk_vlans'],
                             ['access_vlan', 'native_vlan']],
