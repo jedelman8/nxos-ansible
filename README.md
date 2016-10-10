@@ -1,8 +1,8 @@
 # UPDATE 10/10/16
 
-The modules in this repo are officially deprecated.  Going forward, you should use all modules that are in Ansible core - all of them have been migrated such that when you install Ansible 2.2, you get the modules automatically!
+The modules in this repo are officially deprecated.  Going forward, you should use all modules that are in Ansible [core](https://github.com/ansible/ansible-modules-core/tree/devel/network/nxos) - all of them have been migrated such that when you install Ansible 2.2, you get the modules automatically!
 
-The `README` can still be used for guidance.
+This `README.md` can still be used for guidance.
 
 ### Network Automation with Ansible and Cisco Nexus Switches
 
