@@ -1,5 +1,11 @@
-Network Automation with Ansible and Cisco Nexus Switches
-========================
+# UPDATE 10/10/16
+
+The modules in this repo are officially deprecated.  Going forward, you should use all modules that are in Ansible core - all of them have been migrated such that when you install Ansible 2.2, you get the modules automatically!
+
+The `README` can still be used for guidance.
+
+### Network Automation with Ansible and Cisco Nexus Switches
+
 
 #### Want to get an overview of the modules right away?  Check out the docs [here](docs/nexus-module-docs.md)
 
